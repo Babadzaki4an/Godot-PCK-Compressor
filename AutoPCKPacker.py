@@ -1,14 +1,57 @@
-﻿import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+﻿import sys
+import os
 import re
 import gzip
-import os
 import shutil
+import zipfile
+from dataclasses import dataclass
+from typing import List
 
-class JSProcessorApp:
-    # Константы с правилами замены функций
-    FUNCTION_REPLACEMENTS = {
-        """function loadFetch(file, tracker, fileSize, raw) {
+from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
+                               QHBoxLayout, QLabel, QLineEdit, QPushButton,
+                               QCheckBox, QComboBox, QSpinBox, QGroupBox,
+                               QTextEdit, QProgressBar, QFileDialog, QMessageBox,
+                               QFrame, QListWidget, QListWidgetItem)
+from PySide6.QtCore import Qt, QThread, Signal
+from PySide6.QtGui import QFont, QTextCursor
+
+
+# ---------- ТЕМЫ (упрощённые, но рабочие) ----------
+THEMES = {
+    "Тёмная": """
+        QMainWindow, QWidget { background-color: #2b2b2b; color: #ffffff; }
+        QLabel, QCheckBox, QGroupBox { color: #ffffff; }
+        QLineEdit, QTextEdit { background-color: #3c3f41; color: #fff; border: 1px solid #666; border-radius: 3px; }
+        QPushButton { background-color: #4e5254; border: 1px solid #888; border-radius: 4px; padding: 5px; color: #fff; }
+        QPushButton:hover { background-color: #5e6264; }
+        QSpinBox { background-color: #3c3f41; color: #fff; border: 1px solid #666; }
+        QComboBox { background-color: #3c3f41; color: #fff; border: 1px solid #666; }
+        QGroupBox { border: 1px solid #666; margin-top: 12px; }
+        QProgressBar { border: 1px solid #666; background-color: #3c3f41; color: #fff; }
+        QProgressBar::chunk { background-color: #4e9a06; }
+        QListWidget { background-color: #3c3f41; color: #fff; border: 1px solid #666; }
+        QListWidget::item:selected { background-color: #4e9a06; }
+    """,
+    "Светлая": """
+        QMainWindow, QWidget { background-color: #f5f5f5; color: #000; }
+        QLabel, QCheckBox, QGroupBox { color: #000; }
+        QLineEdit, QTextEdit { background-color: #fff; color: #000; border: 1px solid #aaa; border-radius: 3px; }
+        QPushButton { background-color: #e0e0e0; border: 1px solid #888; border-radius: 4px; color: #000; }
+        QPushButton:hover { background-color: #d0d0d0; }
+        QSpinBox { background-color: #fff; color: #000; border: 1px solid #aaa; }
+        QComboBox { background-color: #fff; color: #000; border: 1px solid #aaa; }
+        QGroupBox { border: 1px solid #aaa; margin-top: 12px; }
+        QProgressBar { border: 1px solid #aaa; background-color: #fff; color: #000; }
+        QProgressBar::chunk { background-color: #0078d7; }
+        QListWidget { background-color: #fff; color: #000; border: 1px solid #aaa; }
+        QListWidget::item:selected { background-color: #0078d7; color: white; }
+    """,
+}
+
+
+# ---------- ЗАМЕНЫ ФУНКЦИЙ (ТОЧНЫЕ СТРОКИ) ----------
+# Эти строки взяты из вашего оригинального кода. Если в вашей версии Godot они другие – замените.
+ORIG_LOADFETCH = """function loadFetch(file, tracker, fileSize, raw) {
 \t\ttracker[file] = {
 \t\t\ttotal: fileSize || 0,
 \t\t\tloaded: 0,
@@ -24,8 +67,9 @@ class JSProcessorApp:
 \t\t\t}
 \t\t\treturn tr.arrayBuffer();
 \t\t});
-\t}""" : 
-        """//changed by autoPCK
+\t}"""
+
+NEW_LOADFETCH = """//changed by autoPCK
 function loadFetch(file, tracker, fileSize, raw) {
     var p_file = file;
 
@@ -45,9 +89,9 @@ function loadFetch(file, tracker, fileSize, raw) {
             return new Response(pako.inflate(buffer), { headers: tr.headers });
         }));
     });
-}""",
-        
-        """\tthis.preload = function (pathOrBuffer, destPath, fileSize) {
+}"""
+
+ORIG_PRELOAD = """\tthis.preload = function (pathOrBuffer, destPath, fileSize) {
 \t\tlet buffer = null;
 \t\tif (typeof pathOrBuffer === 'string') {
 \t\t\tconst me = this;
@@ -71,8 +115,9 @@ function loadFetch(file, tracker, fileSize, raw) {
 \t\t\treturn Promise.resolve();
 \t\t}
 \t\treturn Promise.reject(new Error('Invalid object for preloading'));
-\t};""" : 
-        """//changed by autoPCK
+\t};"""
+
+NEW_PRELOAD = """//changed by autoPCK
 this.preload = function (pathOrBuffer, destPath, fileSize) {
     let buffer = null;
     if (typeof pathOrBuffer === 'string') {
@@ -100,656 +145,413 @@ this.preload = function (pathOrBuffer, destPath, fileSize) {
     }
     return Promise.reject(new Error('Invalid object for preloading'));
 };"""
-    }
-    
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Godot Web Build Compressor")
-        self.root.geometry("600x800")  
-        self.root.configure(bg='#f0f0f0')
-        try:
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            root.iconbitmap(os.path.join(script_dir, "icon.ico"))
-        except Exception as e:
-                print(f"Не удалось загрузить иконку: {e}")
-                
-        # Устанавливаем современную тему
-        self.style = ttk.Style()
-        self.style.theme_use('clam')
-    
-        # Настраиваем цвета и стили
-        self.style.configure('TFrame', background='#f0f0f0')
-        self.style.configure('TLabel', background='#f0f0f0', font=('Segoe UI', 10))
-        self.style.configure('TButton', font=('Segoe UI', 10))
-        self.style.configure('Title.TLabel', font=('Segoe UI', 12, 'bold'))
-        self.style.configure('Status.TLabel', font=('Segoe UI', 9))
-        self.style.configure('Modern.TButton', font=('Segoe UI', 10, 'bold'))
-        self.style.configure('TCheckbutton', background='#f0f0f0')
-    
-        # Переменные для отслеживания состояния
-        self.current_filename = "index"
-        self.backup_var = tk.BooleanVar(value=False)  # По умолчанию отключены
-    
-        # Создаем основной фрейм с отступами
-        main_frame = ttk.Frame(root, padding="15")
-        main_frame.pack(fill=tk.BOTH, expand=True)
-    
-        # Заголовок
-        title_label = ttk.Label(main_frame, text="Godot Web Build Compressor", style='Title.TLabel')
-        title_label.grid(row=0, column=0, columnspan=3, pady=(0, 20))
-    
-        # Секция выбора папки
-        folder_frame = ttk.Frame(main_frame)
-        folder_frame.grid(row=1, column=0, columnspan=3, sticky="ew", pady=5)
-    
-        ttk.Label(folder_frame, text="Project Folder:").grid(row=0, column=0, sticky="w", padx=(0, 10))
-        self.folder_entry = ttk.Entry(folder_frame, width=50, font=('Segoe UI', 10))
-        self.folder_entry.grid(row=0, column=1, sticky="ew", padx=(0, 10))
-    
-        browse_btn = ttk.Button(folder_frame, text="Browse", command=self.browse_folder, style='Modern.TButton')
-        browse_btn.grid(row=0, column=2)
-    
-        folder_frame.columnconfigure(1, weight=1)
-    
-        # Секция имени файла
-        file_frame = ttk.Frame(main_frame)
-        file_frame.grid(row=2, column=0, columnspan=3, sticky="ew", pady=5)
-    
-        ttk.Label(file_frame, text="Main File Name:").grid(row=0, column=0, sticky="w", padx=(0, 10))
-        self.filename_entry = ttk.Entry(file_frame, width=50, font=('Segoe UI', 10))
-        self.filename_entry.grid(row=0, column=1, sticky="ew")
-        self.filename_entry.insert(0, self.current_filename)
-    
-        file_frame.columnconfigure(1, weight=1)
-    
-        # Секция настроек
-        settings_frame = ttk.LabelFrame(main_frame, text="Settings", padding=10)
-        settings_frame.grid(row=3, column=0, columnspan=3, sticky="ew", pady=10)
-    
-        # Галочка для бэкапов
-        self.backup_cb = ttk.Checkbutton(settings_frame, text="Create backups", 
-                                        variable=self.backup_var)
-        self.backup_cb.grid(row=0, column=0, sticky="w", padx=(0, 20))
-    
-        # Уровни сжатия
-        ttk.Label(settings_frame, text="WASM Compression:").grid(row=0, column=1, sticky="w", padx=(0, 10))
-        self.wasm_compression = ttk.Combobox(settings_frame, values=list(range(10)), state="readonly", width=5)
-        self.wasm_compression.set(6)
-        self.wasm_compression.grid(row=0, column=2, sticky="w", padx=(0, 20))
-    
-        ttk.Label(settings_frame, text="PCK Compression:").grid(row=0, column=3, sticky="w", padx=(0, 10))
-        self.pck_compression = ttk.Combobox(settings_frame, values=list(range(10)), state="readonly", width=5)
-        self.pck_compression.set(6)
-        self.pck_compression.grid(row=0, column=4, sticky="w")
-    
-        settings_frame.columnconfigure(0, weight=1)
-        settings_frame.columnconfigure(2, weight=1)
-        settings_frame.columnconfigure(4, weight=1)
-    
-        # Привязка событий к комбобоксам сжатия
-        self.wasm_compression.bind('<<ComboboxSelected>>', self.on_compression_changed)
-        self.pck_compression.bind('<<ComboboxSelected>>', self.on_compression_changed)
-    
-        # Статус файлов
-        self.status_label = ttk.Label(main_frame, text="Files status: Please select a folder", style='Status.TLabel')
-        self.status_label.grid(row=4, column=0, columnspan=3, sticky="w", pady=5)
-    
-        # Создаем Notebook для вкладок
-        notebook = ttk.Notebook(main_frame)
-        notebook.grid(row=5, column=0, columnspan=3, sticky="nsew", pady=10)
-    
-        # Настраиваем вес строки с notebook для правильного распределения пространства
-        main_frame.rowconfigure(5, weight=1)
-    
-        # Вкладка операций
-        operations_tab = ttk.Frame(notebook, padding=10)
-        notebook.add(operations_tab, text="Operations")
-    
-        # Используем grid для правильного расположения с правильными весами
-        operations_tab.columnconfigure(0, weight=1)
-        operations_tab.rowconfigure(0, weight=0)  # Functions - фиксированная высота
-        operations_tab.rowconfigure(1, weight=0)  # Additional - фиксированная высота
-        operations_tab.rowconfigure(2, weight=1)  # Compression - растягивается для заполнения
-    
-        # Информация о заменяемых функциях (уменьшенная высота)
-        functions_frame = ttk.LabelFrame(operations_tab, text="Function Replacements", padding=10)
-        functions_frame.grid(row=0, column=0, sticky="ew", pady=5)
-        functions_frame.columnconfigure(0, weight=1)
-    
-        self.functions_text = tk.Text(functions_frame, width=70, height=6, font=('Consolas', 9),  # Уменьшил высоту с 8 до 6
-                                     bg='#f9f9f9', relief='flat', wrap=tk.WORD)
-        scrollbar_func = ttk.Scrollbar(functions_frame, orient="vertical", command=self.functions_text.yview)
-        self.functions_text.configure(yscrollcommand=scrollbar_func.set)
-    
-        self.functions_text.grid(row=0, column=0, sticky="nsew")
-        scrollbar_func.grid(row=0, column=1, sticky="ns")
-    
-        # Заполняем информацию о функциях
-        self.update_functions_info()
-    
-        # Информация о дополнительных действиях 
-        additional_frame = ttk.LabelFrame(operations_tab, text="Additional Actions", padding=10)
-        additional_frame.grid(row=1, column=0, sticky="ew", pady=5)
-        additional_frame.columnconfigure(0, weight=1)
-    
-        self.additional_info = tk.Text(additional_frame, width=70, height=3, font=('Segoe UI', 9), 
-                                      bg='#f9f9f9', relief='flat')
-        self.additional_info.grid(row=0, column=0, sticky="ew")
-        self.additional_info.insert(tk.END, 
-            "✓ Copy pako_inflate.min.js to target folder\n"
-            "✓ Add pako script to index.html before main script\n"
-            "✓ Modify JavaScript to handle compressed files")
-        self.additional_info.config(state=tk.DISABLED)
-    
-        # Информация о сжимаемых файлах (теперь занимает оставшееся пространство)
-        compress_frame = ttk.LabelFrame(operations_tab, text="File Compression", padding=10)
-        compress_frame.grid(row=2, column=0, sticky="nsew", pady=5)
-        compress_frame.columnconfigure(0, weight=1)
-        compress_frame.rowconfigure(0, weight=1)
-    
-        self.compress_info = tk.Text(compress_frame, width=70, font=('Segoe UI', 9), 
-                                    bg='#f9f9f9', relief='flat', wrap=tk.WORD)
-        scrollbar_compress = ttk.Scrollbar(compress_frame, orient="vertical", command=self.compress_info.yview)
-        self.compress_info.configure(yscrollcommand=scrollbar_compress.set)
-    
-        self.compress_info.grid(row=0, column=0, sticky="nsew")
-        scrollbar_compress.grid(row=0, column=1, sticky="ns")
-        self.update_compress_info()
-        self.compress_info.config(state=tk.DISABLED)
-    
-        # Вкладка информации о сжатии
-        info_tab = ttk.Frame(notebook, padding=10)
-        notebook.add(info_tab, text="Compression Info")
-    
-        # Информация об уровнях сжатия
-        compression_info = tk.Text(info_tab, width=70, height=15, font=('Segoe UI', 9), 
-                                  bg='#f9f9f9', relief='flat', wrap=tk.WORD)
-        scrollbar_info = ttk.Scrollbar(info_tab, orient="vertical", command=compression_info.yview)
-        compression_info.configure(yscrollcommand=scrollbar_info.set)
-    
-        compression_info.pack(side="left", fill=tk.BOTH, expand=True)
-        scrollbar_info.pack(side="right", fill="y")
-    
-        compression_info.insert(tk.END, 
-            "Compression Levels Guide:\n\n"
-            "0 - No compression (fastest)\n"
-            "   - Only adds gzip header\n"
-            "   - Best for already compressed files\n\n"
-            "1 - Fastest compression\n"
-            "   - Minimal compression ratio\n"
-            "   - Fastest processing time\n\n"
-            "6 - Balanced (default)\n"
-            "   - Good compression ratio\n"
-            "   - Reasonable speed\n\n"
-            "9 - Maximum compression\n"
-            "   - Best compression ratio\n"
-            "   - Slowest processing time\n\n"
-            "Recommended:\n"
-            "• WASM files: Level 6 (good balance)\n"
-            "• PCK files: Level 9 (maximum compression)")
-        compression_info.config(state=tk.DISABLED)
-    
-        # Кнопка выполнения
-        self.process_button = ttk.Button(main_frame, text="PROCESS FILES", command=self.process, 
-                                        style='Modern.TButton')
-        self.process_button.grid(row=6, column=0, columnspan=3, pady=20, ipadx=20, ipady=10)
-    
-        # Прогресс бар
-        self.progress = ttk.Progressbar(main_frame, mode='indeterminate')
-        self.progress.grid(row=7, column=0, columnspan=3, sticky="ew", pady=5)
-    
-        # Настраиваем вес строк и колонок для правильного растягивания
-        main_frame.columnconfigure(0, weight=1)
-        main_frame.columnconfigure(1, weight=1)
-        main_frame.columnconfigure(2, weight=1)
-    
-        # Привязка событий к полям ввода
-        self.folder_entry.bind('<KeyRelease>', self.on_folder_changed)
-        self.folder_entry.bind('<FocusOut>', self.on_folder_changed)
-    
-        self.filename_entry.bind('<KeyRelease>', self.on_filename_changed)
-        self.filename_entry.bind('<FocusOut>', self.on_filename_changed)
-        self.filename_entry.bind('<Return>', lambda e: self.process())
-    
-        # Первоначальное обновление статуса
-        self.update_file_status()
 
-    def update_functions_info(self):
-        """Обновляет информацию о заменяемых функциях"""
-        self.functions_text.config(state=tk.NORMAL)
-        self.functions_text.delete(1.0, tk.END)
-        
-        self.functions_text.insert(tk.END, "The following functions will be replaced:\n\n")
-        
-        # Показываем изменения для loadFetch
-        self.functions_text.insert(tk.END, "1. loadFetch function:\n")
-        self.functions_text.insert(tk.END, "   Original:\n")
-        old_loadfetch = list(self.FUNCTION_REPLACEMENTS.keys())[0].split('\n')
-        for line in old_loadfetch[:1]:  # Показываем первые 1 строк
-            self.functions_text.insert(tk.END, f"      {line}\n")
-        
-        self.functions_text.insert(tk.END, "\n   Modified:\n")
-        new_loadfetch = list(self.FUNCTION_REPLACEMENTS.values())[0].split('\n')
-        for line in new_loadfetch[:2]:  # Показываем первые 2 строк
-            self.functions_text.insert(tk.END, f"      {line}\n")
-        
-        self.functions_text.insert(tk.END, "\n" + "="*50 + "\n\n")
-        
-        # Показываем изменения для preload
-        self.functions_text.insert(tk.END, "2. preload function:\n")
-        self.functions_text.insert(tk.END, "   Original:\n")
-        old_preload = list(self.FUNCTION_REPLACEMENTS.keys())[1].split('\n')
-        for line in old_preload[:1]:  # Показываем первые 1 строк
-            self.functions_text.insert(tk.END, f"      {line}\n")
-        
-        self.functions_text.insert(tk.END, "\n   Modified:\n")
-        new_preload = list(self.FUNCTION_REPLACEMENTS.values())[1].split('\n')
-        for line in new_preload[:2]:  # Показываем первые 2 строк
-            self.functions_text.insert(tk.END, f"      {line}\n")
-        
-        self.functions_text.config(state=tk.DISABLED)
-    
-    def on_folder_changed(self, event=None):
-        """Вызывается при изменении папки"""
-        self.update_file_status()
-    
-    def on_filename_changed(self, event=None):
-        """Вызывается при изменении имени файла"""
-        self.current_filename = self.filename_entry.get().strip() or "index"
-        self.update_compress_info()
-        self.update_file_status()
-    
-    def on_compression_changed(self, event=None):
-        """Вызывается при изменении уровня сжатия"""
-        self.update_compress_info()
-    
-    def update_compress_info(self):
-        """Обновляет информацию о сжимаемых файлах"""
-        wasm_level = self.wasm_compression.get()
-        pck_level = self.pck_compression.get()
-        
-        self.compress_info.config(state=tk.NORMAL)
-        self.compress_info.delete(1.0, tk.END)
-        
-        # Определяем описания уровней сжатия
-        wasm_desc = self.get_compression_description(wasm_level)
-        pck_desc = self.get_compression_description(pck_level)
-        
-        self.compress_info.insert(tk.END, 
-            f"Files will be compressed and replace originals:\n\n"
-            f"• {self.current_filename}.wasm\n"
-            f"  Compression level: {wasm_level} ({wasm_desc})\n\n"
-            f"• {self.current_filename}.pck\n"
-            f"  Compression level: {pck_level} ({pck_desc})")
-        
-        self.compress_info.config(state=tk.DISABLED)
-    
-    def get_compression_description(self, level):
-        """Возвращает текстовое описание уровня сжатия"""
-        level = int(level)
-        if level == 0:
-            return "No compression"
-        elif level <= 3:
-            return "Fast compression"
-        elif level <= 6:
-            return "Balanced"
-        elif level <= 8:
-            return "High compression"
-        else:
-            return "Maximum compression"
-    
-    def update_file_status(self):
-        """Обновляет статус файлов и активирует/деактивирует кнопку"""
-        folder = self.folder_entry.get()
-        filename = self.filename_entry.get().strip() or "index"
-        
-        if not folder:
-            self.status_label.config(text="Please select a folder", foreground="red")
-            self.process_button.config(state="disabled")
+FUNCTION_REPLACEMENTS = {ORIG_LOADFETCH: NEW_LOADFETCH, ORIG_PRELOAD: NEW_PRELOAD}
+
+
+# ---------- ПОТОК ОБРАБОТКИ ----------
+class Worker(QThread):
+    log_signal = Signal(str)
+    finished_signal = Signal(bool, str)
+
+    def __init__(self, folder, filename, wasm_level, pck_level, backup, 
+                 create_zip, exclude_exts, replace_functions):
+        super().__init__()
+        self.folder = folder
+        self.filename = filename
+        self.wasm_level = wasm_level
+        self.pck_level = pck_level
+        self.backup = backup
+        self.create_zip = create_zip
+        self.exclude_exts = exclude_exts
+        self.replace_functions = replace_functions
+
+    def run(self):
+        try:
+            self._process()
+        except Exception as e:
+            self.log_signal.emit(f"!!! Ошибка: {e}")
+            self.finished_signal.emit(False, str(e))
+
+    def _process(self):
+        self.log_signal.emit("=== НАЧАЛО ОБРАБОТКИ ===")
+        js_path = os.path.join(self.folder, f"{self.filename}.js")
+        if not os.path.exists(js_path):
+            self.finished_signal.emit(False, f"JS файл {self.filename}.js не найден")
             return
-        
-        if not os.path.exists(folder):
-            self.status_label.config(text="Selected folder does not exist", foreground="red")
-            self.process_button.config(state="disabled")
+
+        # 1. Замена функций (если включена)
+        if self.replace_functions:
+            self.log_signal.emit("1. Замена функций в JavaScript...")
+            with open(js_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            if self.backup:
+                shutil.copy2(js_path, js_path + ".backup")
+                self.log_signal.emit("   Бэкап создан")
+            replaced = 0
+            for old, new in FUNCTION_REPLACEMENTS.items():
+                if old in content:
+                    content = content.replace(old, new)
+                    replaced += 1
+            if replaced:
+                self.log_signal.emit(f"   Заменено {replaced} функций")
+                with open(js_path, 'w', encoding='utf-8') as f:
+                    f.write(content)
+            else:
+                self.log_signal.emit("   Ни одна функция не найдена, изменений нет")
+        else:
+            self.log_signal.emit("1. Замена функций ОТКЛЮЧЕНА (пропуск)")
+
+        # 2. Сжатие WASM и PCK
+        for ext, level in [('wasm', self.wasm_level), ('pck', self.pck_level)]:
+            path = os.path.join(self.folder, f"{self.filename}.{ext}")
+            if os.path.exists(path):
+                self.log_signal.emit(f"2. Сжатие {ext.upper()} (ур.{level})...")
+                ok, msg = self._compress_file(path, level)
+                self.log_signal.emit(msg)
+            else:
+                self.log_signal.emit(f"2. {ext.upper()} не найден, пропущено")
+
+        # 3. Копирование pako_inflate.min.js
+        self.log_signal.emit("3. Копирование pako_inflate.min.js...")
+        if self._copy_pako():
+            self.log_signal.emit("   Файл скопирован")
+        else:
+            self.log_signal.emit("   Файл pako_inflate.min.js не найден рядом с программой (пропуск)")
+
+        # 4. Добавление pako в index.html
+        html_path = os.path.join(self.folder, "index.html")
+        if os.path.exists(html_path):
+            self.log_signal.emit("4. Добавление pako в index.html...")
+            if self._add_pako_to_html(html_path):
+                self.log_signal.emit("   Готово")
+            else:
+                self.log_signal.emit("   Не удалось найти тег основного скрипта")
+        else:
+            self.log_signal.emit("4. index.html не найден, пропущено")
+
+        # 5. Создание ZIP архива (без изменений содержимого файлов!)
+        if self.create_zip:
+            self.log_signal.emit("5. Создание ZIP архива...")
+            self.log_signal.emit(self._create_zip())
+
+        self.log_signal.emit("=== ОБРАБОТКА ЗАВЕРШЕНА ===")
+        self.finished_signal.emit(True, "Успешно!")
+
+    def _compress_file(self, path, level):
+        temp = path + '.tmp.gz'
+        try:
+            orig = os.path.getsize(path)
+            with open(path, 'rb') as f_in, gzip.open(temp, 'wb', compresslevel=level) as f_out:
+                f_out.writelines(f_in)
+            new = os.path.getsize(temp)
+            os.remove(path)
+            shutil.move(temp, path)
+            diff = orig - new
+            ratio = (1 - new/orig)*100 if orig else 0
+            diff_s = f"{diff/(1024*1024):.2f} MB" if diff > 1024*1024 else f"{diff/1024:.1f} KB" if diff > 1024 else f"{diff} B"
+            msg = f"   {os.path.basename(path)}: {self._fmt(orig)} → {self._fmt(new)} (-{diff_s}, {ratio:.1f}%)"
+            return True, msg
+        except Exception as e:
+            if os.path.exists(temp):
+                os.remove(temp)
+            return False, f"   Ошибка: {e}"
+
+    @staticmethod
+    def _fmt(size):
+        if size >= 1024*1024: return f"{size/(1024*1024):.2f} MB"
+        if size >= 1024: return f"{size/1024:.2f} KB"
+        return f"{size} B"
+
+    def _copy_pako(self):
+        src = os.path.join(os.path.dirname(sys.argv[0]), "pako_inflate.min.js")
+        dst = os.path.join(self.folder, "pako_inflate.min.js")
+        if not os.path.exists(src):
+            return False
+        shutil.copy2(src, dst)
+        return True
+
+    def _add_pako_to_html(self, html_path):
+        with open(html_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        if self.backup:
+            shutil.copy2(html_path, html_path + ".backup")
+        pattern = rf'<script\s+src=["\']{re.escape(self.filename)}\.js["\']\s*></script>'
+        match = re.search(pattern, content)
+        if not match:
+            return False
+        pako_tag = '<script src="pako_inflate.min.js"></script>\n    '
+        new_content = content[:match.start()] + pako_tag + content[match.start():]
+        with open(html_path, 'w', encoding='utf-8') as f:
+            f.write(new_content)
+        return True
+
+    def _create_zip(self):
+        zip_path = os.path.join(self.folder, f"{self.filename}.zip")
+        files_to_zip = []
+        for f in os.listdir(self.folder):
+            fp = os.path.join(self.folder, f)
+            if os.path.isfile(fp) and not f.lower().endswith('.zip'):
+                ext = os.path.splitext(f)[1].lower()
+                if ext not in self.exclude_exts:
+                    files_to_zip.append(f)
+        if not files_to_zip:
+            return "   Нет файлов для архивации"
+        try:
+            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+                for fname in files_to_zip:
+                    zf.write(os.path.join(self.folder, fname), arcname=fname)
+            return f"   Создан {self.filename}.zip ({len(files_to_zip)} файлов)"
+        except Exception as e:
+            return f"   Ошибка создания архива: {e}"
+
+
+# ---------- ГЛАВНОЕ ОКНО ----------
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Godot Web Build Compressor")
+        self.setMinimumSize(850, 750)
+        self.folder_path = ""
+        self.base_filename = "index"
+        self.worker = None
+        self.exclude_extensions = ['.backup', '.tmp', '.tmp.gz', '.zip']
+        self._setup_ui()
+        self.set_theme("Тёмная")
+        self._update_status()
+
+    def _setup_ui(self):
+        central = QWidget()
+        self.setCentralWidget(central)
+        main_layout = QVBoxLayout(central)
+        main_layout.setContentsMargins(15, 15, 15, 15)
+        main_layout.setSpacing(12)
+
+        title = QLabel("Godot Web Build Compressor")
+        title.setAlignment(Qt.AlignCenter)
+        title.setFont(QFont("Segoe UI", 16, QFont.Bold))
+        main_layout.addWidget(title)
+
+        # Верхняя панель с темой
+        top = QHBoxLayout()
+        top.addStretch()
+        top.addWidget(QLabel("Тема:"))
+        self.theme_combo = QComboBox()
+        self.theme_combo.addItems(list(THEMES.keys()))
+        self.theme_combo.currentTextChanged.connect(self.set_theme)
+        top.addWidget(self.theme_combo)
+        main_layout.addLayout(top)
+
+        # Папка
+        row1 = QHBoxLayout()
+        row1.addWidget(QLabel("Папка проекта:"))
+        self.folder_edit = QLineEdit()
+        self.folder_edit.textChanged.connect(self._on_folder_changed)
+        row1.addWidget(self.folder_edit, 1)
+        browse_btn = QPushButton("Обзор...")
+        browse_btn.clicked.connect(self._browse_folder)
+        row1.addWidget(browse_btn)
+        open_btn = QPushButton("Открыть папку")
+        open_btn.clicked.connect(self._open_folder)
+        row1.addWidget(open_btn)
+        main_layout.addLayout(row1)
+
+        # Имя файла
+        row2 = QHBoxLayout()
+        row2.addWidget(QLabel("Имя главного файла:"))
+        self.name_edit = QLineEdit("index")
+        self.name_edit.textChanged.connect(self._on_name_changed)
+        row2.addWidget(self.name_edit)
+        main_layout.addLayout(row2)
+
+        # Статус
+        self.status_label = QLabel()
+        self.status_label.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        self.status_label.setAlignment(Qt.AlignCenter)
+        self.status_label.setFont(QFont("Segoe UI", 10, QFont.Bold))
+        main_layout.addWidget(self.status_label)
+
+        # Группа параметров
+        group = QGroupBox("Параметры")
+        glay = QVBoxLayout()
+
+        self.backup_cb = QCheckBox("Создавать бэкапы (.backup) перед изменениями")
+        glay.addWidget(self.backup_cb)
+
+        # Уровни сжатия
+        h = QHBoxLayout()
+        h.addWidget(QLabel("Сжатие WASM (0-9):"))
+        self.wasm_spin = QSpinBox()
+        self.wasm_spin.setRange(0, 9)
+        self.wasm_spin.setValue(6)
+        h.addWidget(self.wasm_spin)
+        h.addSpacing(30)
+        h.addWidget(QLabel("Сжатие PCK (0-9):"))
+        self.pck_spin = QSpinBox()
+        self.pck_spin.setRange(0, 9)
+        self.pck_spin.setValue(6)
+        h.addWidget(self.pck_spin)
+        h.addStretch()
+        glay.addLayout(h)
+
+        # Замена функций (можно отключить)
+        self.replace_func_cb = QCheckBox("Заменить функции loadFetch/preload (необходимо для работы pako)")
+        self.replace_func_cb.setChecked(True)
+        glay.addWidget(self.replace_func_cb)
+
+        # ZIP
+        self.zip_cb = QCheckBox("Упаковать все файлы в ZIP (исключая папки и существующие ZIP)")
+        self.zip_cb.setChecked(True)
+        glay.addWidget(self.zip_cb)
+
+        # Исключения
+        glay.addWidget(QLabel("Исключать из ZIP расширения:"))
+        self.exclude_list = QListWidget()
+        self.exclude_list.setMaximumHeight(80)
+        for ext in self.exclude_extensions:
+            self.exclude_list.addItem(ext)
+        glay.addWidget(self.exclude_list)
+        h2 = QHBoxLayout()
+        self.new_ext_edit = QLineEdit()
+        self.new_ext_edit.setPlaceholderText(".расширение")
+        h2.addWidget(self.new_ext_edit)
+        add_btn = QPushButton("Добавить")
+        add_btn.clicked.connect(self._add_exclude)
+        h2.addWidget(add_btn)
+        del_btn = QPushButton("Удалить выбранное")
+        del_btn.clicked.connect(self._remove_exclude)
+        h2.addWidget(del_btn)
+        glay.addLayout(h2)
+
+        group.setLayout(glay)
+        main_layout.addWidget(group)
+
+        # Лог
+        main_layout.addWidget(QLabel("Лог обработки:"))
+        self.log_text = QTextEdit()
+        self.log_text.setReadOnly(True)
+        self.log_text.setFont(QFont("Consolas", 9))
+        self.log_text.setMaximumHeight(200)
+        main_layout.addWidget(self.log_text)
+
+        # Прогресс
+        self.progress = QProgressBar()
+        self.progress.setVisible(False)
+        main_layout.addWidget(self.progress)
+
+        # Кнопка
+        self.process_btn = QPushButton("НАЧАТЬ ОБРАБОТКУ")
+        self.process_btn.setMinimumHeight(40)
+        self.process_btn.clicked.connect(self._start_processing)
+        main_layout.addWidget(self.process_btn)
+
+    def _add_exclude(self):
+        ext = self.new_ext_edit.text().strip()
+        if not ext:
             return
-        
-        # Пути к файлам
-        js_file = os.path.join(folder, filename + ".js")
-        wasm_file = os.path.join(folder, filename + ".wasm")
-        pck_file = os.path.join(folder, filename + ".pck")
-        html_file = os.path.join(folder, "index.html")
-        
-        # Проверяем существование файлов
-        js_exists = os.path.exists(js_file)
-        wasm_exists = os.path.exists(wasm_file)
-        pck_exists = os.path.exists(pck_file)
-        html_exists = os.path.exists(html_file)
-        
-        # Формируем текст статуса с иконками
-        status_parts = []
-        if js_exists:
-            status_parts.append("JS: ✓")
-        else:
-            status_parts.append("JS: ✗")
-            
-        if wasm_exists:
-            status_parts.append("WASM: ✓")
-        else:
-            status_parts.append("WASM: ✗")
-            
-        if pck_exists:
-            status_parts.append("PCK: ✓")
-        else:
-            status_parts.append("PCK: ✗")
-            
-        if html_exists:
-            status_parts.append("HTML: ✓")
-        else:
-            status_parts.append("HTML: ✗")
-        
-        status_text = "Files status: " + " | ".join(status_parts)
-        
-        # Устанавливаем цвет и состояние кнопки
-        if js_exists:
-            self.status_label.config(text=status_text, foreground="green")
-            self.process_button.config(state="normal")
-        else:
-            self.status_label.config(text=status_text, foreground="red")
-            self.process_button.config(state="disabled")
-    
-    def browse_folder(self):
-        """Обзор папки"""
-        folder = filedialog.askdirectory(title="Select folder containing files")
+        if not ext.startswith('.'):
+            ext = '.' + ext
+        ext = ext.lower()
+        if ext not in self.exclude_extensions:
+            self.exclude_extensions.append(ext)
+            self.exclude_list.addItem(ext)
+            self.new_ext_edit.clear()
+
+    def _remove_exclude(self):
+        cur = self.exclude_list.currentItem()
+        if cur:
+            ext = cur.text()
+            if ext in self.exclude_extensions:
+                self.exclude_extensions.remove(ext)
+            self.exclude_list.takeItem(self.exclude_list.row(cur))
+
+    def _browse_folder(self):
+        folder = QFileDialog.getExistingDirectory(self, "Выберите папку проекта")
         if folder:
-            self.folder_entry.delete(0, tk.END)
-            self.folder_entry.insert(0, folder)
-            self.update_file_status()
-    
-    def normalize_code(self, code):
-        """Нормализует код для сравнения (удаляет лишние пробелы)"""
-        lines = code.split('\n')
-        normalized_lines = []
-        for line in lines:
-            stripped = line.strip()
-            if stripped:
-                normalized_lines.append(stripped)
-        return ' '.join(normalized_lines)
-    
-    def replace_functions_in_content(self, content):
-        """Заменяет функции в содержимом JS файла"""
-        # Сначала попробуем точное совпадение
-        for old_func, new_func in self.FUNCTION_REPLACEMENTS.items():
-            if old_func in content:
-                content = content.replace(old_func, new_func)
-                print("Function replaced using exact match")
-                continue
-            
-            # Если точное совпадение не найдено, используем более умный подход
-            content = self.replace_function_smart(content, old_func, new_func)
-        
-        return content
-    
-    def replace_function_smart(self, content, old_func, new_func):
-        """Умная замена функции с поиском по сигнатуре"""
-        # Извлекаем имя функции из старого кода
-        func_name_match = re.search(r'function\s+(\w+)', old_func)
-        if not func_name_match:
-            # Пробуем для методов (this.functionName)
-            func_name_match = re.search(r'this\.(\w+)\s*=\s*function', old_func)
-        
-        if func_name_match:
-            func_name = func_name_match.group(1)
-            print(f"Looking for function: {func_name}")
-            
-            # Создаем паттерн для поиска функции по имени и параметрам
-            param_pattern = r'\([^)]*\)'
-            func_pattern = rf'function\s+{re.escape(func_name)}\s*{param_pattern}\s*{{'
-            
-            # Ищем функцию в контенте
-            match = re.search(func_pattern, content)
-            if match:
-                print(f"Found function {func_name} by pattern")
-                
-                # Находим начало и конец функции
-                start_index = match.start()
-                
-                # Находим парные скобки для тела функции
-                brace_count = 0
-                i = start_index
-                function_started = False
-                
-                while i < len(content):
-                    if content[i] == '{':
-                        brace_count += 1
-                        function_started = True
-                    elif content[i] == '}':
-                        brace_count -= 1
-                    
-                    if function_started and brace_count == 0:
-                        # Нашли конец функции
-                        end_index = i + 1
-                        
-                        # Заменяем функцию
-                        content = content[:start_index] + new_func + content[end_index:]
-                        print(f"Successfully replaced function {func_name}")
-                        break
-                    
-                    i += 1
-        
-        return content
-    
-    def compress_and_replace_file(self, filepath, compression_level):
-        """Сжимает файл и заменяет оригинал сжатой версией, возвращает статистику сжатия"""
-        original_size = 0
-        compressed_size = 0
-        
-        try:
-            # Получаем размер оригинального файла
-            original_size = os.path.getsize(filepath)
-            
-            # Создаем временный файл для сжатия
-            temp_file = filepath + '.tmp.gz'
-            
-            with open(filepath, 'rb') as f_in:
-                with gzip.open(temp_file, 'wb', compresslevel=compression_level) as f_out:
-                    f_out.writelines(f_in)
-            
-            # Получаем размер сжатого файла
-            compressed_size = os.path.getsize(temp_file)
-            
-            # Заменяем оригинальный файл сжатым
-            os.remove(filepath)
-            shutil.move(temp_file, filepath)
-            
-            # Вычисляем статистику
-            size_diff_kb = (original_size - compressed_size) / 1024
-            compression_ratio = (1 - compressed_size / original_size) * 100 if original_size > 0 else 0
-            
-            return True, size_diff_kb, compression_ratio, original_size, compressed_size
-        except Exception as e:
-            # В случае ошибки пытаемся удалить временный файл
-            if os.path.exists(temp_file):
-                try:
-                    os.remove(temp_file)
-                except:
-                    pass
-            print(f"Error compressing {filepath}: {e}")
-            return False, 0, 0, 0, 0
-    
-    def copy_pako_js(self, target_folder):
-        """Копирует pako_inflate.min.js из папки со скриптом в целевую папку"""
-        try:
-            # Получаем путь к папке со скриптом
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            pako_source = os.path.join(script_dir, "pako_inflate.min.js")
-            pako_target = os.path.join(target_folder, "pako_inflate.min.js")
-            
-            if os.path.exists(pako_source):
-                shutil.copy2(pako_source, pako_target)
-                return True, "pako_inflate.min.js copied successfully"
+            self.folder_edit.setText(folder)
+
+    def _open_folder(self):
+        if self.folder_path and os.path.exists(self.folder_path):
+            if sys.platform == "win32":
+                os.startfile(self.folder_path)
             else:
-                return False, f"pako_inflate.min.js not found in {script_dir}"
-        except Exception as e:
-            return False, f"Error copying pako_inflate.min.js: {str(e)}"
-    
-    def add_pako_to_html(self, html_file, js_filename):
-        """Добавляет скрипт pako в index.html перед основным скриптом"""
-        try:
-            with open(html_file, 'r', encoding='utf-8') as f:
-                content = f.read()
-            
-            # Создаем backup только если включена опция
-            if self.backup_var.get():
-                backup_file = html_file + '.backup'
-                with open(backup_file, 'w', encoding='utf-8') as f:
-                    f.write(content)
-            
-            # Ищем строку с подключением основного JS файла
-            script_pattern = rf'<script\s+src=["\']{re.escape(js_filename)}\.js["\']\s*></script>'
-            match = re.search(script_pattern, content)
-            
-            if match:
-                # Нашли скрипт, добавляем pako перед ним
-                pako_script = f'<script src="pako_inflate.min.js"></script>\n    '
-                new_content = content[:match.start()] + pako_script + content[match.start():]
-                
-                # Сохраняем изменения
-                with open(html_file, 'w', encoding='utf-8') as f:
-                    f.write(new_content)
-                
-                return True, "pako script added to index.html"
-            else:
-                return False, f"Could not find {js_filename}.js script tag in index.html"
-                
-        except Exception as e:
-            return False, f"Error modifying index.html: {str(e)}"
-    
-    def format_file_size(self, size_bytes):
-        """Форматирует размер файла в читаемый вид"""
-        if size_bytes >= 1024 * 1024:
-            return f"{size_bytes / (1024 * 1024):.2f} MB"
-        elif size_bytes >= 1024:
-            return f"{size_bytes / 1024:.2f} KB"
+                os.system(f'xdg-open "{self.folder_path}"')
         else:
-            return f"{size_bytes} bytes"
-    
-    def process(self, event=None):
-        """Основная функция обработки"""
-        # Запускаем прогресс-бар
-        self.progress.start()
-        self.process_button.config(state="disabled")
-        
-        # Обновляем интерфейс
-        self.root.update_idletasks()
-        
-        try:
-            folder = self.folder_entry.get()
-            filename = self.filename_entry.get().strip() or "index"
-            
-            # Получаем уровни сжатия
-            try:
-                wasm_level = int(self.wasm_compression.get())
-                pck_level = int(self.pck_compression.get())
-            except:
-                messagebox.showerror("Error", "Please select valid compression levels (0-9)")
-                return
-            
-            # Пути к файлам
-            js_file = os.path.join(folder, filename + ".js")
-            wasm_file = os.path.join(folder, filename + ".wasm")
-            pck_file = os.path.join(folder, filename + ".pck")
-            html_file = os.path.join(folder, "index.html")
-            
-            # Статистика сжатия
-            compression_stats = []
-            
-            # 1. Обрабатываем JS файл
-            with open(js_file, 'r', encoding='utf-8') as f:
-                content = f.read()
-            
-            # Создаем backup только если включена опция
-            if self.backup_var.get():
-                backup_file = js_file + '.backup'
-                with open(backup_file, 'w', encoding='utf-8') as f:
-                    f.write(content)
-            
-            # Заменяем функции
-            new_content = self.replace_functions_in_content(content)
-            
-            # Сохраняем изменения
-            with open(js_file, 'w', encoding='utf-8') as f:
-                f.write(new_content)
-            
-            # 2. Сжимаем файлы (заменяем оригиналы)
-            compressed_files = []
-            
-            if os.path.exists(wasm_file):
-                success, diff_kb, ratio, orig_size, comp_size = self.compress_and_replace_file(wasm_file, wasm_level)
-                if success:
-                    stat = f"{filename}.wasm: {self.format_file_size(orig_size)} → {self.format_file_size(comp_size)} "
-                    stat += f"(-{diff_kb:.1f} KB, {ratio:.1f}% compression)"
-                    compressed_files.append(stat)
-                    compression_stats.append((f"{filename}.wasm", orig_size, comp_size, diff_kb, ratio))
-            
-            if os.path.exists(pck_file):
-                success, diff_kb, ratio, orig_size, comp_size = self.compress_and_replace_file(pck_file, pck_level)
-                if success:
-                    stat = f"{filename}.pck: {self.format_file_size(orig_size)} → {self.format_file_size(comp_size)} "
-                    stat += f"(-{diff_kb:.1f} KB, {ratio:.1f}% compression)"
-                    compressed_files.append(stat)
-                    compression_stats.append((f"{filename}.pck", orig_size, comp_size, diff_kb, ratio))
-            
-            # 3. Копируем pako_inflate.min.js
-            pako_result, pako_message = self.copy_pako_js(folder)
-            
-            # 4. Обновляем index.html
-            html_result, html_message = False, "index.html not found"
-            if os.path.exists(html_file):
-                html_result, html_message = self.add_pako_to_html(html_file, filename)
-            
-            # Формируем подробное сообщение об успехе
-            message_parts = [f"✓ JS file processed: {filename}.js"]
-            
-            if compressed_files:
-                message_parts.append("\n✓ Compressed files:")
-                for stat in compressed_files:
-                    message_parts.append(f"  • {stat}")
-                
-                # Добавляем общую статистику
-                if len(compression_stats) > 1:
-                    total_orig = sum(stat[1] for stat in compression_stats)
-                    total_comp = sum(stat[2] for stat in compression_stats)
-                    total_diff_kb = (total_orig - total_comp) / 1024
-                    total_ratio = (1 - total_comp / total_orig) * 100 if total_orig > 0 else 0
-                    
-                    message_parts.append(f"\n  Total: {self.format_file_size(total_orig)} → {self.format_file_size(total_comp)} ")
-                    message_parts.append(f"  (-{total_diff_kb:.1f} KB, {total_ratio:.1f}% compression)")
-            else:
-                message_parts.append("⚠ No files found for compression")
-            
-            message_parts.append(f"\n✓ {pako_message}")
-            
-            if os.path.exists(html_file):
-                status_icon = "✓" if html_result else "⚠"
-                message_parts.append(f"{status_icon} {html_message}")
-            
-            if self.backup_var.get():
-                message_parts.append(f"\n📁 Backup created: {filename}.js.backup")
-                if os.path.exists(html_file):
-                    message_parts.append(f"📁 HTML backup: index.html.backup")
-            else:
-                message_parts.append(f"\n⚠ Backups were disabled")
-            
-            messagebox.showinfo("Processing Complete", "\n".join(message_parts))
-            
-        except Exception as e:
-            messagebox.showerror("Error", f"Processing failed: {str(e)}")
-        finally:
-            # Останавливаем прогресс-бар и обновляем статус
-            self.progress.stop()
-            self.update_file_status()
+            QMessageBox.warning(self, "Внимание", "Сначала выберите папку проекта")
+
+    def _on_folder_changed(self):
+        self.folder_path = self.folder_edit.text()
+        self._update_status()
+
+    def _on_name_changed(self):
+        self.base_filename = self.name_edit.text().strip() or "index"
+        self._update_status()
+
+    def _update_status(self):
+        if not self.folder_path or not os.path.exists(self.folder_path):
+            self.status_label.setText("❌ Папка не выбрана или не существует")
+            self.status_label.setStyleSheet("color: #ff4444; font-weight: bold;")
+            self.process_btn.setEnabled(False)
+            return
+        name = self.base_filename
+        js = os.path.exists(os.path.join(self.folder_path, f"{name}.js"))
+        html = os.path.exists(os.path.join(self.folder_path, "index.html"))
+        wasm = os.path.exists(os.path.join(self.folder_path, f"{name}.wasm"))
+        pck = os.path.exists(os.path.join(self.folder_path, f"{name}.pck"))
+        text = f"JS: {'✓' if js else '✗'}   WASM: {'✓' if wasm else '✗'}   PCK: {'✓' if pck else '✗'}   HTML: {'✓' if html else '✗'}"
+        self.status_label.setText(text)
+        if js and html:
+            self.status_label.setStyleSheet("color: #4e9a06; font-weight: bold;")
+            self.process_btn.setEnabled(True)
+        else:
+            self.status_label.setStyleSheet("color: #ff4444; font-weight: bold;")
+            self.process_btn.setEnabled(False)
+
+    def set_theme(self, theme_name):
+        self.setStyleSheet(THEMES[theme_name])
+        self._update_status()
+
+    def _start_processing(self):
+        if not self.folder_path or not os.path.exists(self.folder_path):
+            return
+        self.process_btn.setEnabled(False)
+        self.progress.setVisible(True)
+        self.progress.setRange(0, 0)
+        self.log_text.clear()
+        self.log("=== ЗАПУСК ОБРАБОТКИ ===")
+        self.worker = Worker(
+            folder=self.folder_path,
+            filename=self.base_filename,
+            wasm_level=self.wasm_spin.value(),
+            pck_level=self.pck_spin.value(),
+            backup=self.backup_cb.isChecked(),
+            create_zip=self.zip_cb.isChecked(),
+            exclude_exts=self.exclude_extensions,
+            replace_functions=self.replace_func_cb.isChecked(),
+        )
+        self.worker.log_signal.connect(self.log)
+        self.worker.finished_signal.connect(self._on_finished)
+        self.worker.start()
+
+    def log(self, msg):
+        self.log_text.append(msg)
+        cursor = self.log_text.textCursor()
+        cursor.movePosition(QTextCursor.End)
+        self.log_text.setTextCursor(cursor)
+        QApplication.processEvents()
+
+    def _on_finished(self, success, message):
+        self.progress.setVisible(False)
+        self.process_btn.setEnabled(True)
+        if success:
+            self.log(f"\n✅ {message}")
+        else:
+            self.log(f"\n❌ ОШИБКА: {message}")
+
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = JSProcessorApp(root)
-    root.mainloop()
+    app = QApplication(sys.argv)
+    app.setStyle("Fusion")
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec_())
