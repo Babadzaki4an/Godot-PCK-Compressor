@@ -1,5 +1,7 @@
 
 AutoPCKPacker.zip
+output/
+*.exe
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -183,3 +185,4 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 AutoPCKPacker/AutoPCKPacker.exe
+output/Godot-PCK-Compresso.exe

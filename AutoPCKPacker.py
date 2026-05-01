@@ -276,6 +276,12 @@ class App(tk.Tk):
         self.geometry("500x650")
         self.minsize(500, 650)
 
+        try:
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            self.iconbitmap(os.path.join(script_dir, "icon.ico"))
+        except Exception as e:
+                print(f"Не удалось загрузить иконку: {e}")
+
         self.folder_path = ""
         self.base_filename = "index"
         self.exclude_extensions = ['.backup', '.tmp', '.tmp.gz', '.zip']
