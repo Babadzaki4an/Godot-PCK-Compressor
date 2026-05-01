@@ -1,56 +1,21 @@
-﻿import sys
+﻿import tkinter as tk
+from tkinter import ttk, filedialog, messagebox
+import threading
 import os
 import re
 import gzip
 import shutil
 import zipfile
-from dataclasses import dataclass
-from typing import List
+import sys
 
-from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
-                               QHBoxLayout, QLabel, QLineEdit, QPushButton,
-                               QCheckBox, QComboBox, QSpinBox, QGroupBox,
-                               QTextEdit, QProgressBar, QFileDialog, QMessageBox,
-                               QFrame, QListWidget, QListWidgetItem)
-from PySide6.QtCore import Qt, QThread, Signal
-from PySide6.QtGui import QFont, QTextCursor
+# Попытка импорта для изменения цвета заголовка окна (только Windows)
+try:
+    import pywinstyles
+    HAS_PYWINSTYLES = True
+except ImportError:
+    HAS_PYWINSTYLES = False
 
-
-# ---------- ТЕМЫ (упрощённые, но рабочие) ----------
-THEMES = {
-    "Тёмная": """
-        QMainWindow, QWidget { background-color: #2b2b2b; color: #ffffff; }
-        QLabel, QCheckBox, QGroupBox { color: #ffffff; }
-        QLineEdit, QTextEdit { background-color: #3c3f41; color: #fff; border: 1px solid #666; border-radius: 3px; }
-        QPushButton { background-color: #4e5254; border: 1px solid #888; border-radius: 4px; padding: 5px; color: #fff; }
-        QPushButton:hover { background-color: #5e6264; }
-        QSpinBox { background-color: #3c3f41; color: #fff; border: 1px solid #666; }
-        QComboBox { background-color: #3c3f41; color: #fff; border: 1px solid #666; }
-        QGroupBox { border: 1px solid #666; margin-top: 12px; }
-        QProgressBar { border: 1px solid #666; background-color: #3c3f41; color: #fff; }
-        QProgressBar::chunk { background-color: #4e9a06; }
-        QListWidget { background-color: #3c3f41; color: #fff; border: 1px solid #666; }
-        QListWidget::item:selected { background-color: #4e9a06; }
-    """,
-    "Светлая": """
-        QMainWindow, QWidget { background-color: #f5f5f5; color: #000; }
-        QLabel, QCheckBox, QGroupBox { color: #000; }
-        QLineEdit, QTextEdit { background-color: #fff; color: #000; border: 1px solid #aaa; border-radius: 3px; }
-        QPushButton { background-color: #e0e0e0; border: 1px solid #888; border-radius: 4px; color: #000; }
-        QPushButton:hover { background-color: #d0d0d0; }
-        QSpinBox { background-color: #fff; color: #000; border: 1px solid #aaa; }
-        QComboBox { background-color: #fff; color: #000; border: 1px solid #aaa; }
-        QGroupBox { border: 1px solid #aaa; margin-top: 12px; }
-        QProgressBar { border: 1px solid #aaa; background-color: #fff; color: #000; }
-        QProgressBar::chunk { background-color: #0078d7; }
-        QListWidget { background-color: #fff; color: #000; border: 1px solid #aaa; }
-        QListWidget::item:selected { background-color: #0078d7; color: white; }
-    """,
-}
-
-
-# ---------- ЗАМЕНЫ ФУНКЦИЙ (ТОЧНЫЕ СТРОКИ) ----------
-# Эти строки взяты из вашего оригинального кода. Если в вашей версии Godot они другие – замените.
+# ---------- Константы замены функций ----------
 ORIG_LOADFETCH = """function loadFetch(file, tracker, fileSize, raw) {
 \t\ttracker[file] = {
 \t\t\ttotal: fileSize || 0,
@@ -148,15 +113,11 @@ this.preload = function (pathOrBuffer, destPath, fileSize) {
 
 FUNCTION_REPLACEMENTS = {ORIG_LOADFETCH: NEW_LOADFETCH, ORIG_PRELOAD: NEW_PRELOAD}
 
-
-# ---------- ПОТОК ОБРАБОТКИ ----------
-class Worker(QThread):
-    log_signal = Signal(str)
-    finished_signal = Signal(bool, str)
-
-    def __init__(self, folder, filename, wasm_level, pck_level, backup, 
-                 create_zip, exclude_exts, replace_functions):
-        super().__init__()
+# ---------- Класс фоновой обработки ----------
+class Processor:
+    def __init__(self, folder, filename, wasm_level, pck_level, backup,
+                 create_zip, exclude_exts, replace_functions,
+                 log_callback, done_callback):
         self.folder = folder
         self.filename = filename
         self.wasm_level = wasm_level
@@ -165,78 +126,79 @@ class Worker(QThread):
         self.create_zip = create_zip
         self.exclude_exts = exclude_exts
         self.replace_functions = replace_functions
+        self.log = log_callback
+        self.done = done_callback
 
-    def run(self):
-        try:
-            self._process()
-        except Exception as e:
-            self.log_signal.emit(f"!!! Ошибка: {e}")
-            self.finished_signal.emit(False, str(e))
+    def start(self):
+        thread = threading.Thread(target=self._process, daemon=True)
+        thread.start()
 
     def _process(self):
-        self.log_signal.emit("=== НАЧАЛО ОБРАБОТКИ ===")
+        try:
+            self._run()
+        except Exception as e:
+            self.log(f"!!! Критическая ошибка: {e}")
+            self.done(False, str(e))
+
+    def _run(self):
+        self.log("=== НАЧАЛО ОБРАБОТКИ ===")
         js_path = os.path.join(self.folder, f"{self.filename}.js")
         if not os.path.exists(js_path):
-            self.finished_signal.emit(False, f"JS файл {self.filename}.js не найден")
+            self.done(False, f"JS файл {self.filename}.js не найден")
             return
 
-        # 1. Замена функций (если включена)
         if self.replace_functions:
-            self.log_signal.emit("1. Замена функций в JavaScript...")
+            self.log("1. Замена функций в JavaScript...")
             with open(js_path, 'r', encoding='utf-8') as f:
                 content = f.read()
             if self.backup:
                 shutil.copy2(js_path, js_path + ".backup")
-                self.log_signal.emit("   Бэкап создан")
+                self.log("   Бэкап создан")
             replaced = 0
             for old, new in FUNCTION_REPLACEMENTS.items():
                 if old in content:
                     content = content.replace(old, new)
                     replaced += 1
             if replaced:
-                self.log_signal.emit(f"   Заменено {replaced} функций")
+                self.log(f"   Заменено {replaced} функций")
                 with open(js_path, 'w', encoding='utf-8') as f:
                     f.write(content)
             else:
-                self.log_signal.emit("   Ни одна функция не найдена, изменений нет")
+                self.log("   Ни одна функция не найдена, изменений нет")
         else:
-            self.log_signal.emit("1. Замена функций ОТКЛЮЧЕНА (пропуск)")
+            self.log("1. Замена функций ОТКЛЮЧЕНА (пропуск)")
 
-        # 2. Сжатие WASM и PCK
         for ext, level in [('wasm', self.wasm_level), ('pck', self.pck_level)]:
             path = os.path.join(self.folder, f"{self.filename}.{ext}")
             if os.path.exists(path):
-                self.log_signal.emit(f"2. Сжатие {ext.upper()} (ур.{level})...")
+                self.log(f"2. Сжатие {ext.upper()} (ур.{level})...")
                 ok, msg = self._compress_file(path, level)
-                self.log_signal.emit(msg)
+                self.log(msg)
             else:
-                self.log_signal.emit(f"2. {ext.upper()} не найден, пропущено")
+                self.log(f"2. {ext.upper()} не найден, пропущено")
 
-        # 3. Копирование pako_inflate.min.js
-        self.log_signal.emit("3. Копирование pako_inflate.min.js...")
+        self.log("3. Копирование pako_inflate.min.js...")
         if self._copy_pako():
-            self.log_signal.emit("   Файл скопирован")
+            self.log("   Файл скопирован")
         else:
-            self.log_signal.emit("   Файл pako_inflate.min.js не найден рядом с программой (пропуск)")
+            self.log("   Файл pako_inflate.min.js не найден (пропуск)")
 
-        # 4. Добавление pako в index.html
         html_path = os.path.join(self.folder, "index.html")
         if os.path.exists(html_path):
-            self.log_signal.emit("4. Добавление pako в index.html...")
+            self.log("4. Добавление pako в index.html...")
             if self._add_pako_to_html(html_path):
-                self.log_signal.emit("   Готово")
+                self.log("   Готово")
             else:
-                self.log_signal.emit("   Не удалось найти тег основного скрипта")
+                self.log("   Не удалось найти тег основного скрипта")
         else:
-            self.log_signal.emit("4. index.html не найден, пропущено")
+            self.log("4. index.html не найден, пропущено")
 
-        # 5. Создание ZIP архива (без изменений содержимого файлов!)
         if self.create_zip:
-            self.log_signal.emit("5. Создание ZIP архива...")
-            self.log_signal.emit(self._create_zip())
+            self.log("5. Создание ZIP архива...")
+            self.log(self._create_zip())
 
-        self.log_signal.emit("=== ОБРАБОТКА ЗАВЕРШЕНА ===")
-        self.finished_signal.emit(True, "Успешно!")
+        self.log("=== ОБРАБОТКА ЗАВЕРШЕНА ===")
+        self.done(True, "Успешно!")
 
     def _compress_file(self, path, level):
         temp = path + '.tmp.gz'
@@ -264,7 +226,7 @@ class Worker(QThread):
         return f"{size} B"
 
     def _copy_pako(self):
-        src = os.path.join(os.path.dirname(sys.argv[0]), "pako_inflate.min.js")
+        src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pako_inflate.min.js")
         dst = os.path.join(self.folder, "pako_inflate.min.js")
         if not os.path.exists(src):
             return False
@@ -306,147 +268,188 @@ class Worker(QThread):
             return f"   Ошибка создания архива: {e}"
 
 
-# ---------- ГЛАВНОЕ ОКНО ----------
-class MainWindow(QMainWindow):
+# ---------- ГЛАВНОЕ ПРИЛОЖЕНИЕ ----------
+class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Godot Web Build Compressor")
-        self.setMinimumSize(850, 750)
+        self.title("Godot Web Build Compressor")
+        self.geometry("500x650")
+        self.minsize(500, 650)
+
         self.folder_path = ""
         self.base_filename = "index"
-        self.worker = None
         self.exclude_extensions = ['.backup', '.tmp', '.tmp.gz', '.zip']
+
+        self.style = ttk.Style()
+        self.style.theme_use('clam')
+        self.current_theme = "dark"
+
+        self.outer_frame = tk.Frame(self, bd=2, relief="solid")
+        self.outer_frame.pack(fill=tk.BOTH, expand=True, padx=6, pady=6)
+
         self._setup_ui()
-        self.set_theme("Тёмная")
+        self._apply_theme()
         self._update_status()
 
     def _setup_ui(self):
-        central = QWidget()
-        self.setCentralWidget(central)
-        main_layout = QVBoxLayout(central)
-        main_layout.setContentsMargins(15, 15, 15, 15)
-        main_layout.setSpacing(12)
+        main = ttk.Frame(self.outer_frame, padding=8)
+        main.pack(fill=tk.BOTH, expand=True)
 
-        title = QLabel("Godot Web Build Compressor")
-        title.setAlignment(Qt.AlignCenter)
-        title.setFont(QFont("Segoe UI", 16, QFont.Bold))
-        main_layout.addWidget(title)
+        title = ttk.Label(main, text="Godot Web Build Compressor", font=('Segoe UI', 13, 'bold'))
+        title.pack(pady=(0, 5))
 
-        # Верхняя панель с темой
-        top = QHBoxLayout()
-        top.addStretch()
-        top.addWidget(QLabel("Тема:"))
-        self.theme_combo = QComboBox()
-        self.theme_combo.addItems(list(THEMES.keys()))
-        self.theme_combo.currentTextChanged.connect(self.set_theme)
-        top.addWidget(self.theme_combo)
-        main_layout.addLayout(top)
+        top_frame = ttk.Frame(main)
+        top_frame.pack(fill=tk.X, pady=(0, 5))
+        ttk.Label(top_frame, text="Тема:").pack(side=tk.RIGHT, padx=(0,5))
+        self.theme_var = tk.StringVar(value="Тёмная")
+        theme_combo = ttk.Combobox(top_frame, textvariable=self.theme_var, values=["Тёмная", "Светлая"], state="readonly", width=10)
+        theme_combo.pack(side=tk.RIGHT)
+        theme_combo.bind("<<ComboboxSelected>>", lambda e: self._apply_theme())
 
-        # Папка
-        row1 = QHBoxLayout()
-        row1.addWidget(QLabel("Папка проекта:"))
-        self.folder_edit = QLineEdit()
-        self.folder_edit.textChanged.connect(self._on_folder_changed)
-        row1.addWidget(self.folder_edit, 1)
-        browse_btn = QPushButton("Обзор...")
-        browse_btn.clicked.connect(self._browse_folder)
-        row1.addWidget(browse_btn)
-        open_btn = QPushButton("Открыть папку")
-        open_btn.clicked.connect(self._open_folder)
-        row1.addWidget(open_btn)
-        main_layout.addLayout(row1)
+        folder_frame = ttk.Frame(main)
+        folder_frame.pack(fill=tk.X, pady=2)
+        ttk.Label(folder_frame, text="Папка проекта:").pack(side=tk.LEFT, padx=(0,8))
+        self.folder_entry = ttk.Entry(folder_frame)
+        self.folder_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0,8))
+        ttk.Button(folder_frame, text="Обзор...", command=self._browse_folder).pack(side=tk.LEFT, padx=(0,4))
+        ttk.Button(folder_frame, text="Открыть папку", command=self._open_folder).pack(side=tk.LEFT)
 
-        # Имя файла
-        row2 = QHBoxLayout()
-        row2.addWidget(QLabel("Имя главного файла:"))
-        self.name_edit = QLineEdit("index")
-        self.name_edit.textChanged.connect(self._on_name_changed)
-        row2.addWidget(self.name_edit)
-        main_layout.addLayout(row2)
+        name_frame = ttk.Frame(main)
+        name_frame.pack(fill=tk.X, pady=2)
+        ttk.Label(name_frame, text="Имя главного файла:").pack(side=tk.LEFT, padx=(0,8))
+        self.name_entry = ttk.Entry(name_frame)
+        self.name_entry.insert(0, "index")
+        self.name_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
-        # Статус
-        self.status_label = QLabel()
-        self.status_label.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-        self.status_label.setAlignment(Qt.AlignCenter)
-        self.status_label.setFont(QFont("Segoe UI", 10, QFont.Bold))
-        main_layout.addWidget(self.status_label)
+        self.folder_entry.bind("<KeyRelease>", lambda e: self._on_folder_changed())
+        self.name_entry.bind("<KeyRelease>", lambda e: self._on_name_changed())
 
-        # Группа параметров
-        group = QGroupBox("Параметры")
-        glay = QVBoxLayout()
+        self.status_label = ttk.Label(main, text="", anchor=tk.CENTER, font=('Segoe UI', 9, 'bold'))
+        self.status_label.pack(fill=tk.X, pady=4)
 
-        self.backup_cb = QCheckBox("Создавать бэкапы (.backup) перед изменениями")
-        glay.addWidget(self.backup_cb)
+        params = ttk.LabelFrame(main, text="Параметры", padding=6)
+        params.pack(fill=tk.X, pady=4)
 
-        # Уровни сжатия
-        h = QHBoxLayout()
-        h.addWidget(QLabel("Сжатие WASM (0-9):"))
-        self.wasm_spin = QSpinBox()
-        self.wasm_spin.setRange(0, 9)
-        self.wasm_spin.setValue(6)
-        h.addWidget(self.wasm_spin)
-        h.addSpacing(30)
-        h.addWidget(QLabel("Сжатие PCK (0-9):"))
-        self.pck_spin = QSpinBox()
-        self.pck_spin.setRange(0, 9)
-        self.pck_spin.setValue(6)
-        h.addWidget(self.pck_spin)
-        h.addStretch()
-        glay.addLayout(h)
+        self.backup_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(params, text="Создавать бэкапы (.backup) перед изменениями", variable=self.backup_var).pack(anchor=tk.W)
 
-        # Замена функций (можно отключить)
-        self.replace_func_cb = QCheckBox("Заменить функции loadFetch/preload (необходимо для работы pako)")
-        self.replace_func_cb.setChecked(True)
-        glay.addWidget(self.replace_func_cb)
+        levels_frame = ttk.Frame(params)
+        levels_frame.pack(fill=tk.X, pady=3)
+        ttk.Label(levels_frame, text="Сжатие WASM (0-9):").pack(side=tk.LEFT, padx=(0,5))
+        self.wasm_spin = ttk.Spinbox(levels_frame, from_=0, to=9, width=5, state="readonly")
+        self.wasm_spin.set(6)
+        self.wasm_spin.pack(side=tk.LEFT, padx=(0,15))
+        ttk.Label(levels_frame, text="Сжатие PCK (0-9):").pack(side=tk.LEFT, padx=(0,5))
+        self.pck_spin = ttk.Spinbox(levels_frame, from_=0, to=9, width=5, state="readonly")
+        self.pck_spin.set(6)
+        self.pck_spin.pack(side=tk.LEFT)
 
-        # ZIP
-        self.zip_cb = QCheckBox("Упаковать все файлы в ZIP (исключая папки и существующие ZIP)")
-        self.zip_cb.setChecked(True)
-        glay.addWidget(self.zip_cb)
+        self.replace_var = tk.BooleanVar(value=True)
+        ttk.Checkbutton(params, text="Заменить функции loadFetch/preload (необходимо для работы pako)", variable=self.replace_var).pack(anchor=tk.W, pady=(3,0))
 
-        # Исключения
-        glay.addWidget(QLabel("Исключать из ZIP расширения:"))
-        self.exclude_list = QListWidget()
-        self.exclude_list.setMaximumHeight(80)
+        self.zip_var = tk.BooleanVar(value=True)
+        ttk.Checkbutton(params, text="Упаковать все файлы в ZIP (исключая папки и существующие ZIP)", variable=self.zip_var).pack(anchor=tk.W)
+
+        ttk.Label(params, text="Исключать из ZIP расширения:").pack(anchor=tk.W, pady=(3,0))
+        list_frame = ttk.Frame(params)
+        list_frame.pack(fill=tk.X, pady=2)
+        self.exclude_listbox = tk.Listbox(list_frame, height=3)
+        self.exclude_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scroll = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.exclude_listbox.yview)
+        scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        self.exclude_listbox.config(yscrollcommand=scroll.set)
         for ext in self.exclude_extensions:
-            self.exclude_list.addItem(ext)
-        glay.addWidget(self.exclude_list)
-        h2 = QHBoxLayout()
-        self.new_ext_edit = QLineEdit()
-        self.new_ext_edit.setPlaceholderText(".расширение")
-        h2.addWidget(self.new_ext_edit)
-        add_btn = QPushButton("Добавить")
-        add_btn.clicked.connect(self._add_exclude)
-        h2.addWidget(add_btn)
-        del_btn = QPushButton("Удалить выбранное")
-        del_btn.clicked.connect(self._remove_exclude)
-        h2.addWidget(del_btn)
-        glay.addLayout(h2)
+            self.exclude_listbox.insert(tk.END, ext)
 
-        group.setLayout(glay)
-        main_layout.addWidget(group)
+        add_frame = ttk.Frame(params)
+        add_frame.pack(fill=tk.X, pady=2)
+        self.new_ext_entry = ttk.Entry(add_frame, width=12)
+        self.new_ext_entry.pack(side=tk.LEFT, padx=(0,5))
+        ttk.Button(add_frame, text="Добавить", command=self._add_exclude).pack(side=tk.LEFT, padx=(0,5))
+        ttk.Button(add_frame, text="Удалить выбранное", command=self._remove_exclude).pack(side=tk.LEFT)
 
-        # Лог
-        main_layout.addWidget(QLabel("Лог обработки:"))
-        self.log_text = QTextEdit()
-        self.log_text.setReadOnly(True)
-        self.log_text.setFont(QFont("Consolas", 9))
-        self.log_text.setMaximumHeight(200)
-        main_layout.addWidget(self.log_text)
+        ttk.Label(main, text="Лог обработки:").pack(anchor=tk.W, pady=(4,0))
+        log_frame = ttk.Frame(main)
+        log_frame.pack(fill=tk.BOTH, expand=True, pady=2)
+        self.log_text = tk.Text(log_frame, wrap=tk.WORD, font=('Consolas', 9), height=9)
+        scroll_log = ttk.Scrollbar(log_frame, command=self.log_text.yview)
+        self.log_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scroll_log.pack(side=tk.RIGHT, fill=tk.Y)
+        self.log_text.config(yscrollcommand=scroll_log.set)
 
-        # Прогресс
-        self.progress = QProgressBar()
-        self.progress.setVisible(False)
-        main_layout.addWidget(self.progress)
+        self.progress = ttk.Progressbar(main, mode='indeterminate')
+        self.progress.pack(fill=tk.X, pady=4)
+        self.progress.pack_forget()
 
-        # Кнопка
-        self.process_btn = QPushButton("НАЧАТЬ ОБРАБОТКУ")
-        self.process_btn.setMinimumHeight(40)
-        self.process_btn.clicked.connect(self._start_processing)
-        main_layout.addWidget(self.process_btn)
+        self.process_btn = ttk.Button(main, text="НАЧАТЬ ОБРАБОТКУ", command=self._start_processing)
+        self.process_btn.pack(pady=5)
+
+    def _apply_theme(self):
+        theme = self.theme_var.get()
+        if theme == "Тёмная":
+            bg = "#2b2b2b"
+            fg = "#ffffff"
+            entry_bg = "#3c3f41"
+            text_bg = "#252526"
+            button_bg = "#3c6e47"
+            button_active_bg = "#2b5a3b"
+            select_bg = "#4e9a06"
+            progress = "#4e9a06"
+            list_bg = "#3c3f41"
+            border_color = "#3c3f41"
+            check_active_bg = "#3c3f41"
+            check_active_fg = fg
+            if HAS_PYWINSTYLES and sys.platform == "win32":
+                pywinstyles.change_header_color(self, color="#2b2b2b")
+                pywinstyles.change_title_color(self, color="#ffffff")
+        else:
+            bg = "#f5f5f5"
+            fg = "#000000"
+            entry_bg = "#ffffff"
+            text_bg = "#f9f9f9"
+            button_bg = "#0078d7"
+            button_active_bg = "#005a9e"
+            select_bg = "#cce4ff"
+            progress = "#0078d7"
+            list_bg = "#ffffff"
+            border_color = "#c0c0c0"
+            check_active_bg = "#e0e0e0"
+            check_active_fg = fg
+            if HAS_PYWINSTYLES and sys.platform == "win32":
+                pywinstyles.change_header_color(self, color="#f5f5f5")
+                pywinstyles.change_title_color(self, color="#000000")
+
+        self.configure(bg=bg)
+        self.outer_frame.config(bg=border_color, highlightbackground=border_color)
+
+        self.style.configure('TFrame', background=bg)
+        self.style.configure('TLabel', background=bg, foreground=fg)
+        self.style.configure('TLabelframe', background=bg, foreground=fg)
+        self.style.configure('TLabelframe.Label', background=bg, foreground=fg)
+        self.style.configure('TButton', background=button_bg, foreground=fg)
+        self.style.map('TButton',
+                       background=[('active', button_active_bg), ('pressed', button_active_bg)],
+                       foreground=[('active', fg)])
+        self.style.configure('TCheckbutton', background=bg, foreground=fg)
+        self.style.map('TCheckbutton',
+                       background=[('active', check_active_bg), ('selected', bg)],
+                       foreground=[('active', check_active_fg), ('selected', fg)],
+                       indicatorcolor=[('selected', select_bg)])
+        self.style.configure('TProgressbar', background=progress, troughcolor=select_bg)
+        self.style.configure('TEntry', fieldbackground=entry_bg, foreground=fg)
+        self.style.configure('TSpinbox', fieldbackground=entry_bg, foreground=fg, arrowcolor=fg)
+        self.style.configure('TCombobox', fieldbackground=entry_bg, foreground=fg)
+        self.style.map('TCombobox', fieldbackground=[('readonly', entry_bg)], foreground=[('readonly', fg)])
+
+        self.log_text.config(bg=text_bg, fg=fg, insertbackground=fg, selectbackground=select_bg)
+        self.exclude_listbox.config(bg=list_bg, fg=fg, selectbackground=select_bg)
+        self.status_label.config(background=bg, foreground=fg)
+        self.folder_entry.config(background=entry_bg, foreground=fg)
+        self.name_entry.config(background=entry_bg, foreground=fg)
+        self.new_ext_entry.config(background=entry_bg, foreground=fg)
 
     def _add_exclude(self):
-        ext = self.new_ext_edit.text().strip()
+        ext = self.new_ext_entry.get().strip()
         if not ext:
             return
         if not ext.startswith('.'):
@@ -454,21 +457,24 @@ class MainWindow(QMainWindow):
         ext = ext.lower()
         if ext not in self.exclude_extensions:
             self.exclude_extensions.append(ext)
-            self.exclude_list.addItem(ext)
-            self.new_ext_edit.clear()
+            self.exclude_listbox.insert(tk.END, ext)
+            self.new_ext_entry.delete(0, tk.END)
 
     def _remove_exclude(self):
-        cur = self.exclude_list.currentItem()
-        if cur:
-            ext = cur.text()
+        sel = self.exclude_listbox.curselection()
+        if sel:
+            idx = sel[0]
+            ext = self.exclude_listbox.get(idx)
             if ext in self.exclude_extensions:
                 self.exclude_extensions.remove(ext)
-            self.exclude_list.takeItem(self.exclude_list.row(cur))
+            self.exclude_listbox.delete(idx)
 
     def _browse_folder(self):
-        folder = QFileDialog.getExistingDirectory(self, "Выберите папку проекта")
+        folder = filedialog.askdirectory(title="Выберите папку проекта")
         if folder:
-            self.folder_edit.setText(folder)
+            self.folder_entry.delete(0, tk.END)
+            self.folder_entry.insert(0, folder)
+            self._on_folder_changed()
 
     def _open_folder(self):
         if self.folder_path and os.path.exists(self.folder_path):
@@ -477,21 +483,20 @@ class MainWindow(QMainWindow):
             else:
                 os.system(f'xdg-open "{self.folder_path}"')
         else:
-            QMessageBox.warning(self, "Внимание", "Сначала выберите папку проекта")
+            messagebox.showwarning("Внимание", "Сначала выберите папку проекта")
 
     def _on_folder_changed(self):
-        self.folder_path = self.folder_edit.text()
+        self.folder_path = self.folder_entry.get().strip()
         self._update_status()
 
     def _on_name_changed(self):
-        self.base_filename = self.name_edit.text().strip() or "index"
+        self.base_filename = self.name_entry.get().strip() or "index"
         self._update_status()
 
     def _update_status(self):
         if not self.folder_path or not os.path.exists(self.folder_path):
-            self.status_label.setText("❌ Папка не выбрана или не существует")
-            self.status_label.setStyleSheet("color: #ff4444; font-weight: bold;")
-            self.process_btn.setEnabled(False)
+            self.status_label.config(text="❌ Папка не выбрана или не существует", foreground="red")
+            self.process_btn.config(state=tk.DISABLED)
             return
         name = self.base_filename
         js = os.path.exists(os.path.join(self.folder_path, f"{name}.js"))
@@ -499,59 +504,60 @@ class MainWindow(QMainWindow):
         wasm = os.path.exists(os.path.join(self.folder_path, f"{name}.wasm"))
         pck = os.path.exists(os.path.join(self.folder_path, f"{name}.pck"))
         text = f"JS: {'✓' if js else '✗'}   WASM: {'✓' if wasm else '✗'}   PCK: {'✓' if pck else '✗'}   HTML: {'✓' if html else '✗'}"
-        self.status_label.setText(text)
         if js and html:
-            self.status_label.setStyleSheet("color: #4e9a06; font-weight: bold;")
-            self.process_btn.setEnabled(True)
+            self.status_label.config(text=text, foreground="green")
+            self.process_btn.config(state=tk.NORMAL)
         else:
-            self.status_label.setStyleSheet("color: #ff4444; font-weight: bold;")
-            self.process_btn.setEnabled(False)
-
-    def set_theme(self, theme_name):
-        self.setStyleSheet(THEMES[theme_name])
-        self._update_status()
+            self.status_label.config(text=text, foreground="red")
+            self.process_btn.config(state=tk.DISABLED)
 
     def _start_processing(self):
         if not self.folder_path or not os.path.exists(self.folder_path):
             return
-        self.process_btn.setEnabled(False)
-        self.progress.setVisible(True)
-        self.progress.setRange(0, 0)
-        self.log_text.clear()
+        self.process_btn.config(state=tk.DISABLED)
+        self.progress.pack(fill=tk.X, pady=4)
+        self.progress.start()
+        self.log_text.delete(1.0, tk.END)
         self.log("=== ЗАПУСК ОБРАБОТКИ ===")
-        self.worker = Worker(
+
+        self.processor = Processor(
             folder=self.folder_path,
             filename=self.base_filename,
-            wasm_level=self.wasm_spin.value(),
-            pck_level=self.pck_spin.value(),
-            backup=self.backup_cb.isChecked(),
-            create_zip=self.zip_cb.isChecked(),
-            exclude_exts=self.exclude_extensions,
-            replace_functions=self.replace_func_cb.isChecked(),
+            wasm_level=int(self.wasm_spin.get()),
+            pck_level=int(self.pck_spin.get()),
+            backup=self.backup_var.get(),
+            create_zip=self.zip_var.get(),
+            exclude_exts=self.exclude_extensions.copy(),
+            replace_functions=self.replace_var.get(),
+            log_callback=self.log,
+            done_callback=self._on_processing_done
         )
-        self.worker.log_signal.connect(self.log)
-        self.worker.finished_signal.connect(self._on_finished)
-        self.worker.start()
+        self.processor.start()
 
     def log(self, msg):
-        self.log_text.append(msg)
-        cursor = self.log_text.textCursor()
-        cursor.movePosition(QTextCursor.End)
-        self.log_text.setTextCursor(cursor)
-        QApplication.processEvents()
+        self.after(0, lambda: self._append_log(msg))
 
-    def _on_finished(self, success, message):
-        self.progress.setVisible(False)
-        self.process_btn.setEnabled(True)
+    def _append_log(self, msg):
+        self.log_text.insert(tk.END, msg + "\n")
+        self.log_text.see(tk.END)
+        self.update_idletasks()
+
+    def _on_processing_done(self, success, message):
+        self.after(0, lambda: self._finish_processing(success, message))
+
+    def _finish_processing(self, success, message):
+        self.progress.stop()
+        self.progress.pack_forget()
+        self.process_btn.config(state=tk.NORMAL)
         if success:
-            self.log(f"\n✅ {message}")
+            self.log_text.insert(tk.END, f"\n✅ {message}\n")
+            messagebox.showinfo("Готово", message)
         else:
-            self.log(f"\n❌ ОШИБКА: {message}")
+            self.log_text.insert(tk.END, f"\n❌ ОШИБКА: {message}\n")
+            messagebox.showerror("Ошибка", f"Обработка не удалась:\n{message}")
+        self.log_text.see(tk.END)
 
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    app.setStyle("Fusion")
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec_())
+    app = App()
+    app.mainloop()
