@@ -7,7 +7,7 @@
   },
   {
    "optionDest": "filenames",
-   "value": "D:/Godot-PCK-Compressor/AutoPCKPacker.py"
+   "value": "D:/Godot-PCK-Compressor/main.py"
   },
   {
    "optionDest": "onefile",
@@ -19,11 +19,11 @@
   },
   {
    "optionDest": "icon_file",
-   "value": "D:/Godot-PCK-Compressor/icon.ico"
+   "value": "D:/Godot-PCK-Compressor/resources/icon.ico"
   },
   {
    "optionDest": "name",
-   "value": "Godot-PCK-Compresso"
+   "value": "Godot-PCK-Compressor"
   },
   {
    "optionDest": "clean_build",
@@ -63,11 +63,11 @@
   },
   {
    "optionDest": "datas",
-   "value": "D:/Godot-PCK-Compressor/icon.ico;."
+   "value": "D:/Godot-PCK-Compressor/resources;resources/"
   },
   {
    "optionDest": "datas",
-   "value": "D:/Godot-PCK-Compressor/pako_inflate.min.js;."
+   "value": "D:/Godot-PCK-Compressor/scripts;scripts/"
   }
  ],
  "nonPyinstallerOptions": {

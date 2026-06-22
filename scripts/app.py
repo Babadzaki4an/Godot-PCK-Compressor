@@ -1,11 +1,9 @@
-﻿import tkinter as tk
+# app.py
+import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import threading
 import os
 import re
-import gzip
-import shutil
-import zipfile
 import sys
 
 # Попытка импорта для изменения цвета заголовка окна (только Windows)
@@ -15,276 +13,26 @@ try:
 except ImportError:
     HAS_PYWINSTYLES = False
 
-# ---------- Константы замены функций ----------
-ORIG_LOADFETCH = """function loadFetch(file, tracker, fileSize, raw) {
-\t\ttracker[file] = {
-\t\t\ttotal: fileSize || 0,
-\t\t\tloaded: 0,
-\t\t\tdone: false,
-\t\t};
-\t\treturn fetch(file).then(function (response) {
-\t\t\tif (!response.ok) {
-\t\t\t\treturn Promise.reject(new Error(`Failed loading file '${file}'`));
-\t\t\t}
-\t\t\tconst tr = getTrackedResponse(response, tracker[file]);
-\t\t\tif (raw) {
-\t\t\t\treturn Promise.resolve(tr);
-\t\t\t}
-\t\t\treturn tr.arrayBuffer();
-\t\t});
-\t}"""
+from scripts.processor import Processor
 
-NEW_LOADFETCH = """//changed by autoPCK
-function loadFetch(file, tracker, fileSize, raw) {
-    var p_file = file;
-
-    tracker[file] = {
-        total: fileSize || 0,
-        loaded: 0,
-        done: false,
-    };
-
-    return fetch(file).then(function (response) {
-        if (!response.ok) {
-            return Promise.reject(new Error(`Failed loading file '${file}'`));
-        }
-
-        const tr = getTrackedResponse(response, tracker[p_file]);
-        return Promise.resolve(tr.arrayBuffer().then(buffer => {
-            return new Response(pako.inflate(buffer), { headers: tr.headers });
-        }));
-    });
-}"""
-
-ORIG_PRELOAD = """\tthis.preload = function (pathOrBuffer, destPath, fileSize) {
-\t\tlet buffer = null;
-\t\tif (typeof pathOrBuffer === 'string') {
-\t\t\tconst me = this;
-\t\t\treturn this.loadPromise(pathOrBuffer, fileSize).then(function (buf) {
-\t\t\t\tme.preloadedFiles.push({
-\t\t\t\t\tpath: destPath || pathOrBuffer,
-\t\t\t\t\tbuffer: buf,
-\t\t\t\t});
-\t\t\t\treturn Promise.resolve();
-\t\t\t});
-\t\t} else if (pathOrBuffer instanceof ArrayBuffer) {
-\t\t\tbuffer = new Uint8Array(pathOrBuffer);
-\t\t} else if (ArrayBuffer.isView(pathOrBuffer)) {
-\t\t\tbuffer = new Uint8Array(pathOrBuffer.buffer);
-\t\t}
-\t\tif (buffer) {
-\t\t\tthis.preloadedFiles.push({
-\t\t\t\tpath: destPath,
-\t\t\t\tbuffer: pathOrBuffer,
-\t\t\t});
-\t\t\treturn Promise.resolve();
-\t\t}
-\t\treturn Promise.reject(new Error('Invalid object for preloading'));
-\t};"""
-
-NEW_PRELOAD = """//changed by autoPCK
-this.preload = function (pathOrBuffer, destPath, fileSize) {
-    let buffer = null;
-    if (typeof pathOrBuffer === 'string') {
-        const me = this;
-        return this.loadPromise(pathOrBuffer, fileSize).then(function (buf) {
-            buf.arrayBuffer().then(data => {
-                me.preloadedFiles.push({
-                    path: destPath || pathOrBuffer,
-                    buffer: data,
-                });
-            });
-            return Promise.resolve();
-        });
-    } else if (pathOrBuffer instanceof ArrayBuffer) {
-        buffer = new Uint8Array(pathOrBuffer);
-    } else if (ArrayBuffer.isView(pathOrBuffer)) {
-        buffer = new Uint8Array(pathOrBuffer.buffer);
-    }
-    if (buffer) {
-        this.preloadedFiles.push({
-            path: destPath,
-            buffer: pathOrBuffer,
-        });
-        return Promise.resolve();
-    }
-    return Promise.reject(new Error('Invalid object for preloading'));
-};"""
-
-FUNCTION_REPLACEMENTS = {ORIG_LOADFETCH: NEW_LOADFETCH, ORIG_PRELOAD: NEW_PRELOAD}
-
-# ---------- Класс фоновой обработки ----------
-class Processor:
-    def __init__(self, folder, filename, wasm_level, pck_level, backup,
-                 create_zip, exclude_exts, replace_functions,
-                 log_callback, done_callback):
-        self.folder = folder
-        self.filename = filename
-        self.wasm_level = wasm_level
-        self.pck_level = pck_level
-        self.backup = backup
-        self.create_zip = create_zip
-        self.exclude_exts = exclude_exts
-        self.replace_functions = replace_functions
-        self.log = log_callback
-        self.done = done_callback
-
-    def start(self):
-        thread = threading.Thread(target=self._process, daemon=True)
-        thread.start()
-
-    def _process(self):
-        try:
-            self._run()
-        except Exception as e:
-            self.log(f"!!! Критическая ошибка: {e}")
-            self.done(False, str(e))
-
-    def _run(self):
-        self.log("=== НАЧАЛО ОБРАБОТКИ ===")
-        js_path = os.path.join(self.folder, f"{self.filename}.js")
-        if not os.path.exists(js_path):
-            self.done(False, f"JS файл {self.filename}.js не найден")
-            return
-
-        if self.replace_functions:
-            self.log("1. Замена функций в JavaScript...")
-            with open(js_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-            if self.backup:
-                shutil.copy2(js_path, js_path + ".backup")
-                self.log("   Бэкап создан")
-            replaced = 0
-            for old, new in FUNCTION_REPLACEMENTS.items():
-                if old in content:
-                    content = content.replace(old, new)
-                    replaced += 1
-            if replaced:
-                self.log(f"   Заменено {replaced} функций")
-                with open(js_path, 'w', encoding='utf-8') as f:
-                    f.write(content)
-            else:
-                self.log("   Ни одна функция не найдена, изменений нет")
-        else:
-            self.log("1. Замена функций ОТКЛЮЧЕНА (пропуск)")
-
-        for ext, level in [('wasm', self.wasm_level), ('pck', self.pck_level)]:
-            path = os.path.join(self.folder, f"{self.filename}.{ext}")
-            if os.path.exists(path):
-                self.log(f"2. Сжатие {ext.upper()} (ур.{level})...")
-                ok, msg = self._compress_file(path, level)
-                self.log(msg)
-            else:
-                self.log(f"2. {ext.upper()} не найден, пропущено")
-
-        self.log("3. Копирование pako_inflate.min.js...")
-        if self._copy_pako():
-            self.log("   Файл скопирован")
-        else:
-            self.log("   Файл pako_inflate.min.js не найден (пропуск)")
-
-        html_path = os.path.join(self.folder, "index.html")
-        if os.path.exists(html_path):
-            self.log("4. Добавление pako в index.html...")
-            if self._add_pako_to_html(html_path):
-                self.log("   Готово")
-            else:
-                self.log("   Не удалось найти тег основного скрипта")
-        else:
-            self.log("4. index.html не найден, пропущено")
-
-        if self.create_zip:
-            self.log("5. Создание ZIP архива...")
-            self.log(self._create_zip())
-
-        self.log("=== ОБРАБОТКА ЗАВЕРШЕНА ===")
-        self.done(True, "Успешно!")
-
-    def _compress_file(self, path, level):
-        temp = path + '.tmp.gz'
-        try:
-            orig = os.path.getsize(path)
-            with open(path, 'rb') as f_in, gzip.open(temp, 'wb', compresslevel=level) as f_out:
-                f_out.writelines(f_in)
-            new = os.path.getsize(temp)
-            os.remove(path)
-            shutil.move(temp, path)
-            diff = orig - new
-            ratio = (1 - new/orig)*100 if orig else 0
-            diff_s = f"{diff/(1024*1024):.2f} MB" if diff > 1024*1024 else f"{diff/1024:.1f} KB" if diff > 1024 else f"{diff} B"
-            msg = f"   {os.path.basename(path)}: {self._fmt(orig)} → {self._fmt(new)} (-{diff_s}, {ratio:.1f}%)"
-            return True, msg
-        except Exception as e:
-            if os.path.exists(temp):
-                os.remove(temp)
-            return False, f"   Ошибка: {e}"
-
-    @staticmethod
-    def _fmt(size):
-        if size >= 1024*1024: return f"{size/(1024*1024):.2f} MB"
-        if size >= 1024: return f"{size/1024:.2f} KB"
-        return f"{size} B"
-
-    def _copy_pako(self):
-        src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pako_inflate.min.js")
-        dst = os.path.join(self.folder, "pako_inflate.min.js")
-        if not os.path.exists(src):
-            return False
-        shutil.copy2(src, dst)
-        return True
-
-    def _add_pako_to_html(self, html_path):
-        with open(html_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-        if self.backup:
-            shutil.copy2(html_path, html_path + ".backup")
-        pattern = rf'<script\s+src=["\']{re.escape(self.filename)}\.js["\']\s*></script>'
-        match = re.search(pattern, content)
-        if not match:
-            return False
-        pako_tag = '<script src="pako_inflate.min.js"></script>\n    '
-        new_content = content[:match.start()] + pako_tag + content[match.start():]
-        with open(html_path, 'w', encoding='utf-8') as f:
-            f.write(new_content)
-        return True
-
-    def _create_zip(self):
-        zip_path = os.path.join(self.folder, f"{self.filename}.zip")
-        files_to_zip = []
-        for f in os.listdir(self.folder):
-            fp = os.path.join(self.folder, f)
-            if os.path.isfile(fp) and not f.lower().endswith('.zip'):
-                ext = os.path.splitext(f)[1].lower()
-                if ext not in self.exclude_exts:
-                    files_to_zip.append(f)
-        if not files_to_zip:
-            return "   Нет файлов для архивации"
-        try:
-            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
-                for fname in files_to_zip:
-                    zf.write(os.path.join(self.folder, fname), arcname=fname)
-            return f"   Создан {self.filename}.zip ({len(files_to_zip)} файлов)"
-        except Exception as e:
-            return f"   Ошибка создания архива: {e}"
-
-
-# ---------- ГЛАВНОЕ ПРИЛОЖЕНИЕ ----------
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Godot Web Build Compressor")
-        self.geometry("500x650")
-        self.minsize(500, 650)
+        self.geometry("500x700")
+        self.minsize(500, 700)
 
+        # Определяем корневую папку проекта (на уровень выше scripts)
+        self.root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        icon_path = os.path.join(self.root_dir, "resources", "icon.ico")
         try:
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            self.iconbitmap(os.path.join(script_dir, "icon.ico"))
+            self.iconbitmap(icon_path)
         except Exception as e:
-                print(f"Не удалось загрузить иконку: {e}")
+            print(f"Не удалось загрузить иконку: {e}")
 
         self.folder_path = ""
         self.base_filename = "index"
-        self.exclude_extensions = ['.backup', '.tmp', '.tmp.gz', '.zip']
+        self.exclude_extensions = ['.backup', '.tmp', '.tmp.gz', '.zip', '.img', '.import', '.old']
 
         self.style = ttk.Style()
         self.style.theme_use('clam')
@@ -352,6 +100,13 @@ class App(tk.Tk):
 
         self.replace_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(params, text="Заменить функции loadFetch/preload (необходимо для работы pako)", variable=self.replace_var).pack(anchor=tk.W, pady=(3,0))
+
+        # Новые чекбоксы
+        self.crazy_game_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(params, text="CrazyGame (заменить /sdk.js на SDK CrazyGames)", variable=self.crazy_game_var).pack(anchor=tk.W, pady=(3,0))
+
+        self.remove_icons_var = tk.BooleanVar(value=True)
+        ttk.Checkbutton(params, text="Убрать иконки (удалить link-теги иконок)", variable=self.remove_icons_var).pack(anchor=tk.W, pady=(3,0))
 
         self.zip_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(params, text="Упаковать все файлы в ZIP (исключая папки и существующие ZIP)", variable=self.zip_var).pack(anchor=tk.W)
@@ -535,6 +290,8 @@ class App(tk.Tk):
             create_zip=self.zip_var.get(),
             exclude_exts=self.exclude_extensions.copy(),
             replace_functions=self.replace_var.get(),
+            crazy_game=self.crazy_game_var.get(),
+            remove_icons=self.remove_icons_var.get(),
             log_callback=self.log,
             done_callback=self._on_processing_done
         )
@@ -562,8 +319,3 @@ class App(tk.Tk):
             self.log_text.insert(tk.END, f"\n❌ ОШИБКА: {message}\n")
             messagebox.showerror("Ошибка", f"Обработка не удалась:\n{message}")
         self.log_text.see(tk.END)
-
-
-if __name__ == "__main__":
-    app = App()
-    app.mainloop()
