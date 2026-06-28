@@ -104,11 +104,11 @@ def get_scons_cmd(target : str, threads : str, profile_path : str) -> list[str]:
 def get_build_commands(emsdk_path : str, godot_path : str) -> str:
     return [
         'chcp 65001 > nul',
-        f'cd /d "{emsdk_path}"',
+        f'cd "{emsdk_path}"',
         'call emsdk install latest',
         'call emsdk activate latest',
         'call emsdk_env.bat',
-        f'cd /d "{godot_path}"',
+        f'cd "{godot_path}"',
     ]
 
 DEFAULT_WASM_FLAGS = [
