@@ -1,0 +1,22 @@
+{
+  "app_title": "Godot PCK Compressor",
+  "menu_home": "Главная",
+  "menu_compress": "Сжатие",
+  "menu_settings": "Настройки",
+  "menu_about": "О программе",
+  "home_title": "Добро пожаловать",
+  "home_description": "Инструмент для автоматического сжатия билдов Godot для веб-платформы.",
+  "compress_title": "Сжатие билда",
+  "compress_select_folder": "Выберите папку с билдом:",
+  "compress_html_name": "Имя HTML-файла:",
+  "compress_html_placeholder": "index",
+  "compress_start": "Запустить сжатие",
+  "compress_progress": "Прогресс",
+  "compress_status": "Статус",
+  "settings_title": "Настройки",
+  "settings_language": "Язык",
+  "settings_compression_level": "Уровень сжатия",
+  "about_title": "О программе",
+  "about_version": "Версия 1.0",
+  "about_description": "Утилита для разработчиков игр на Godot."
+}

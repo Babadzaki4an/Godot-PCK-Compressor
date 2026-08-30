@@ -1,0 +1,19 @@
+<div id="gzip-settings" class="tab-settings">
+    <h3>Gzip</h3>
+    <p>Gzip сжатие</p>
+    <div class="form-group">
+        <label>
+            <input type="checkbox" id="createBackup" checked> Создавать бэкапы (.backup) перед изменениями
+        </label>
+    </div>
+    <div class="form-group" style="display: flex; gap: 20px; flex-wrap: wrap;">
+        <div>
+            <label for="wasmCompressionLevel">Сжатие WASM (0-9):</label>
+            <input type="number" id="wasmCompressionLevel" class="text-input" min="0" max="9" value="9" style="width: 70px;">
+        </div>
+        <div>
+            <label for="pckCompressionLevel">Сжатие PCK (0-9):</label>
+            <input type="number" id="pckCompressionLevel" class="text-input" min="0" max="9" value="9" style="width: 70px;">
+        </div>
+    </div>
+</div>

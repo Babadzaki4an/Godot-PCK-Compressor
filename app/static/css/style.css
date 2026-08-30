@@ -1,0 +1,491 @@
+/* ============================================
+   Godot PCK Compressor – Полный файл стилей
+   Тёмная тема, адаптив, сворачиваемое меню
+   ============================================ */
+
+/* ---------- CSS-переменные (цветовая схема) ---------- */
+:root {
+    --bg-body: #1e1e2f;
+    --bg-app: #282a36;
+    --bg-sidebar: #1e1e2e;
+    --border-color: #3d3f4b;
+    --text-primary: #f8f8f2;
+    --text-secondary: #d4d4d4;
+    --text-muted: #a0a0b0;
+    --accent: #bd93f9;
+    --accent-hover: #d4bfff;
+    --success: #50fa7b;
+    --success-hover: #69ff94;
+    --input-bg: #3d3f4b;
+    --input-border: #555;
+    --menu-hover: #2a2a3a;
+    --btn-bg: #44475a;
+    --btn-hover: #5a5d72;
+    --shadow: rgba(0, 0, 0, 0.3);
+}
+
+/* ---------- Общие сбросы ---------- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background: var(--bg-body);
+    color: var(--text-secondary);
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.app-container {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    background: var(--bg-app);
+}
+
+/* ---------- Боковое меню ---------- */
+.sidebar {
+    width: 250px;
+    background: var(--bg-sidebar);
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border-color);
+    transition: width 0.3s ease;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+/* Заголовок меню (лого + кнопка) */
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 16px 12px 16px;
+    flex-shrink: 0;
+    min-height: 70px; /* фиксируем минимальную высоту, чтобы стрелка не прыгала */
+}
+
+/* ---------- Логотип ---------- */
+.logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    text-decoration: none;
+    gap: 4px;
+    transition: all 0.2s;
+    padding: 0 10px;
+}
+.logo i {
+    font-size: 36px;
+    line-height: 1;
+    color: var(--accent);
+}
+
+.logo-icon {
+    width: 64px;         
+    height: 64px;
+    object-fit: contain;
+    display: block;
+}
+
+.logo-title {
+    font-size: 22px;
+    font-weight: bold;
+    text-align: center;
+    white-space: normal;
+    word-wrap: break-word;
+    line-height: 1.3;
+    max-width: 100%;
+    color: var(--accent); /* фиолетовый, как и просили */
+}
+
+/* Скрываем логотип при свёрнутом меню */
+.sidebar.collapsed .logo {
+    display: none;
+}
+
+/* ---------- Кнопка сворачивания (стрелочка) ---------- */
+.toggle-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px 8px;
+    transition: transform 0.3s, color 0.2s;
+    z-index: 10;
+    flex-shrink: 0; /* чтобы не сжималась */
+}
+.toggle-btn:hover {
+    color: var(--text-primary);
+}
+.sidebar.collapsed .toggle-btn {
+    transform: rotate(180deg);
+}
+
+/* ---------- Меню (список пунктов) ---------- */
+.menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-grow: 1;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 14px 24px;
+    cursor: pointer;
+    transition: background 0.2s, border-left 0.2s;
+    border-left: 4px solid transparent;
+    color: var(--text-muted);
+    font-size: 16px;
+    white-space: nowrap;
+}
+.menu-item i {
+    width: 24px;
+    text-align: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+.menu-item span {
+    transition: opacity 0.2s;
+}
+.menu-item:hover {
+    background: var(--menu-hover);
+    color: var(--text-primary);
+}
+.menu-item.active {
+    background: var(--menu-hover);
+    border-left-color: var(--accent);
+    color: var(--text-primary);
+}
+
+/* ---------- Свёрнутое состояние ---------- */
+.sidebar.collapsed {
+    width: 70px;
+}
+/* Логотип скрыт */
+.sidebar.collapsed .sidebar-header {
+    padding: 12px 0;
+    justify-content: center;
+    min-height: 70px; /* сохраняем ту же высоту, стрелка не прыгает */
+}
+.sidebar.collapsed .menu-item span {
+    display: none;
+}
+.sidebar.collapsed .menu-item {
+    justify-content: center;
+    padding: 14px 0;
+    gap: 0;
+}
+.sidebar.collapsed .menu-item i {
+    font-size: 22px;
+    margin: 0;
+}
+
+/* ---------- Основная область ---------- */
+.content {
+    flex: 1;
+    padding: 30px 40px;
+    overflow-y: auto;
+    transition: margin-left 0.3s ease;
+}
+.content.expanded {
+    margin-left: 0;
+}
+
+/* ---------- Страницы (переключаемые) ---------- */
+.page {
+    display: none;
+}
+.page.active {
+    display: block;
+}
+
+h1 {
+    font-size: 28px;
+    margin-bottom: 20px;
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+p, label {
+    font-size: 16px;
+    line-height: 1.6;
+    margin-bottom: 15px;
+    color: var(--text-secondary);
+}
+
+/* ---------- Форма сжатия ---------- */
+.compress-form {
+    max-width: 600px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.folder-selector {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+.folder-selector input {
+    flex: 1;
+    padding: 10px 12px;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+.folder-selector input:read-only {
+    cursor: default;
+}
+.folder-selector button {
+    padding: 10px 16px;
+    background: var(--btn-bg);
+    border: none;
+    border-radius: 4px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.folder-selector button:hover {
+    background: var(--btn-hover);
+}
+
+.primary-btn {
+    padding: 12px 30px;
+    background: var(--success);
+    border: none;
+    border-radius: 4px;
+    color: var(--bg-body);
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.primary-btn:hover {
+    background: var(--success-hover);
+}
+.primary-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.progress-container {
+    margin-top: 25px;
+}
+.progress-bar {
+    width: 100%;
+    height: 20px;
+    background: var(--input-bg);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 8px 0 5px 0;
+}
+#progressFill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--success), var(--accent));
+    transition: width 0.3s ease;
+}
+#progressText {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.status-container {
+    margin-top: 20px;
+    padding: 12px 16px;
+    background: var(--input-bg);
+    border-radius: 4px;
+}
+#statusMessage {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+/* ---------- Настройки ---------- */
+.settings-group {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.settings-group select {
+    padding: 8px 12px;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 14px;
+    max-width: 200px;
+}
+
+/* ---------- Ссылки ---------- */
+a {
+    color: var(--accent);
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+
+
+/* Блок статуса файлов */
+.file-status {
+    margin-top: 20px;
+    padding: 15px;
+    background: var(--input-bg);
+    border-radius: 6px;
+}
+.file-status label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 8px;
+}
+.status-row {
+    display: flex;
+    flex-wrap: nowrap;      /* запрещаем перенос */
+    gap: 20px;
+    align-items: center;
+}
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    white-space: nowrap;
+}
+.status-item i {
+    font-size: 14px;
+}
+.status-item .fa-circle {
+    color: gray;
+}
+.status-item .fa-check-circle {
+    color: var(--success);
+}
+.status-item .fa-times-circle {
+    color: #ff5555;
+}
+.status-message {
+    margin-top: 8px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+input[type="checkbox"] {
+    margin: 0;
+    accent-color: var(--accent) !important;
+    cursor: pointer;
+}
+
+/* ---------- Адаптив для мобильных ---------- */
+@media (max-width: 768px) {
+    .app-container {
+        flex-direction: column;
+    }
+    .sidebar {
+        width: 100% !important;
+        flex-direction: row;
+        padding: 10px 20px;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        align-items: center;
+        height: auto;
+        flex-shrink: 0;
+    }
+    .sidebar-header {
+        padding: 0;
+        margin-right: 20px;
+        flex-shrink: 0;
+        min-height: auto;
+    }
+    .logo {
+        flex-direction: row;
+        gap: 10px;
+        align-items: center;
+        display: flex !important;
+        padding: 0;
+    }
+    .logo i {
+        font-size: 28px;
+    }
+    .logo-title {
+        font-size: 18px;
+        white-space: nowrap;
+        color: var(--accent);
+    }
+    .menu {
+        display: flex;
+        gap: 10px;
+        flex-grow: 0;
+        flex-wrap: wrap;
+    }
+    .menu-item {
+        padding: 8px 12px;
+        border-left: none;
+        border-bottom: 3px solid transparent;
+        gap: 8px;
+    }
+    .menu-item span {
+        display: inline !important;
+        opacity: 1 !important;
+    }
+    .menu-item i {
+        font-size: 16px;
+        width: auto;
+    }
+    .menu-item.active {
+        border-bottom-color: var(--accent);
+        border-left: none;
+    }
+    /* Отключаем сворачивание на мобилках */
+    .sidebar.collapsed {
+        width: 100% !important;
+    }
+    .sidebar.collapsed .logo {
+        display: flex !important;
+    }
+    .sidebar.collapsed .menu-item span {
+        display: inline !important;
+    }
+    .sidebar.collapsed .menu-item {
+        padding: 8px 12px;
+        justify-content: flex-start;
+        gap: 8px;
+    }
+    .sidebar.collapsed .menu-item i {
+        font-size: 16px;
+        margin: 0;
+    }
+    .sidebar.collapsed .sidebar-header {
+        padding: 0;
+        justify-content: flex-start;
+        min-height: auto;
+    }
+    .toggle-btn {
+        display: none;
+    }
+    .content {
+        padding: 20px;
+        margin-left: 0 !important;
+    }
+    .content.expanded {
+        margin-left: 0 !important;
+    }
+}

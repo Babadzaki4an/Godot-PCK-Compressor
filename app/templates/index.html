@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ _("app_title") }}</title>
+    <!-- Общий CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Фавикон -->
+    <link rel="icon" type="image/x-icon" href="/static/icons/favicon.ico">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Боковое меню -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <img src="/static/icons/logo.svg" alt="Godot PCK Compressor" class="logo-icon">
+                    <span class="logo-title">{{ _("app_title") }}</span>
+                </div>
+                <button id="toggleSidebarBtn" class="toggle-btn">
+                    <i id="toggleIcon" class="fas fa-chevron-left"></i>
+                </button>
+            </div>
+            <ul class="menu">
+                <li class="menu-item active" data-page="home">
+                    <i class="fas fa-home"></i>
+                    <span>{{ _("menu_home") }}</span>
+                </li>
+                <li class="menu-item" data-page="compress">
+                    <i class="fas fa-file-archive"></i>
+                    <span>{{ _("menu_compress") }}</span>
+                </li>
+                <li class="menu-item" data-page="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>{{ _("menu_settings") }}</span>
+                </li>
+                <li class="menu-item" data-page="about">
+                    <i class="fas fa-info-circle"></i>
+                    <span>{{ _("menu_about") }}</span>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Основная область с контентом страниц -->
+        <main class="content" id="content">
+            <!-- Каждая страница – отдельный include -->
+            <div id="page-home" class="page active">
+                {% include "pages/home.html" %}
+            </div>
+            <div id="page-compress" class="page">
+                {% include "pages/compress.html" %}
+            </div>
+            <div id="page-settings" class="page">
+                {% include "pages/settings.html" %}
+            </div>
+            <div id="page-about" class="page">
+                {% include "pages/about.html" %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Общий JavaScript -->
+    <script src="/static/js/persist.js"></script>
+    <script src="/static/js/main.js"></script>
+    <!-- Специфичные скрипты для каждой страницы (загружаются сразу) -->
+    <script src="/static/js/pages/compress.js"></script>
+</body>
+</html>
