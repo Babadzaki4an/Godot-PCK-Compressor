@@ -38,38 +38,57 @@
         </div>
     </div>
 
-    <!-- Выпадающий список для выбора типа сжатия -->
-    <div class="form-group">
-        <label for="compressionSelect">Тип сжатия:</label>
-        <select id="compressionSelect" class="text-input" style="max-width: 200px;">
-            <option value="zip">Zip</option>
-            <option value="gzip">Gzip</option>
-            <option value="brotli">Brotli</option>
+    <!-- Блок выбора сжатия -->
+    <div class="collapsible-block compression-block">
+        <div class="collapsible-header compression-header">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <label for="compressionSelect" style="margin: 0; font-weight: 500; white-space: nowrap;">Тип сжатия:</label>
+                <select id="compressionSelect" class="text-input" style="width: auto; min-width: 120px; padding: 6px 10px;">
+                    <option value="gzip">Gzip</option>
+                    <option value="brotli">Brotli</option>
+                </select>
+            </div>
+            <button id="toggleCompressionBlock" class="toggle-btn">
+                <i class="fas fa-chevron-down"></i>
+            </button>
+        </div>
+        <div id="compressionContent" class="collapsible-content open">
+            <div id="gzip-settings" class="tab-settings">
+                {% include "partials/gzip_settings.html" %}
+            </div>
+            <div id="brotli-settings" class="tab-settings" style="display: none;">
+                {% include "partials/brotli_settings.html" %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Платформа -->
+    <div class="platform-block">
+        <label for="platformSelect">Платформа:</label>
+        <select id="platformSelect" class="text-input">
+            <option value="">Загрузка...</option>
         </select>
     </div>
 
-    <!-- Блоки настроек для каждого типа (показываются по выбору) -->
-    <div id="zip-settings" class="tab-settings">
-        {% include "partials/zip_settings.html" %}
-    </div>
-    <div id="gzip-settings" class="tab-settings" style="display: none;">
-        {% include "partials/gzip_settings.html" %}
-    </div>
-    <div id="brotli-settings" class="tab-settings" style="display: none;">
-        {% include "partials/brotli_settings.html" %}
-    </div>
-
-    <!-- Блок исключения расширений (всегда виден) -->
-    <div class="form-group exclude-extensions">
-        <label>Исключать из архива расширения:</label>
-        <div class="extension-input-group">
-            <input type="text" id="excludeExtensionInput" class="text-input" placeholder=".backup">
-            <button id="addExtensionBtn" class="secondary-btn">Добавить</button>
+    <!-- Блок исключения расширений -->
+    <div class="collapsible-block exclude-extensions">
+        <div class="collapsible-header exclude-header">
+            <label>
+                <input type="checkbox" id="excludeEnabled" checked> 
+                <span>Упаковать в архив</span>
+            </label>
+            <button id="toggleExcludeBlock" class="toggle-btn">
+                <i class="fas fa-chevron-down"></i>
+            </button>
         </div>
-        <ul id="extensionList" class="extension-list">
-            <!-- расширения будут добавляться сюда -->
-        </ul>
-        <button id="removeSelectedExtensionsBtn" class="danger-btn">Удалить выбранное</button>
+        <div id="excludeContent" class="collapsible-content open">
+            <div class="extension-input-group">
+                <input type="text" id="excludeExtensionInput" placeholder=".backup">
+                <button id="addExtensionBtn" class="secondary-btn">Добавить</button>
+            </div>
+            <ul id="extensionList" class="extension-list"></ul>
+            <button id="removeSelectedExtensionsBtn" class="danger-btn">Удалить выбранное</button>
+        </div>
     </div>
 
     <!-- Кнопка запуска -->

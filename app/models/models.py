@@ -5,11 +5,27 @@ class CheckProjectRequest(BaseModel):
     folder: str
     html_name: str = "index"
 
-class CompressRequest(BaseModel):
-    folder: str                     
-    html_name: str = "index"       
-    compression_type: str = "zip"   
+# ---------- Базовая модель с общими полями ----------
+class BaseCompressRequest(BaseModel):
+    """Общие поля для всех этапов сжатия"""
+    folder: str
+    filename: str = "index"
+    
+
+# ---------- Модель для эндпоинта /compress ----------
+class CompressRequest(BaseCompressRequest):
+    """Параметры сжатия (WASM, PCK, тип)"""
+    compression_type: str = "zip"   # "gzip" или "brotli"
     create_backup: bool = True
-    wasm_level: int = 9             
-    pck_level: int = 9              
-    exclude_extensions: List[str] = [] 
+    wasm_level: int = 9
+    pck_level: int = 9
+
+# ---------- Модель для эндпоинта /platform ----------
+class PlatformRequest(BaseCompressRequest):
+    """Добавление SDK конкретной платформы"""
+    platform: str   # например, "Yandex", "CrazyGames" и т.д.
+
+# ---------- Модель для эндпоинта /zippack ----------
+class ZippackRequest(BaseCompressRequest):
+    """Упаковка в ZIP (без дополнительных параметров)"""
+    exclude_extensions: List[str] = []

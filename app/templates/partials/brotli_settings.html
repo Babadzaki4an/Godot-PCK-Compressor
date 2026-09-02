@@ -1,2 +1,18 @@
-<h3>Brotli</h3>
-<p>Brotli сжатие (не реализовано)</p>
+<div id="brotli-settings" class="tab-settings">
+    <h3>Brotli <span style="color: #ff5555; font-size: 0.8em;">(не реализовано)</span></h3>
+    <div class="form-group">
+        <label>
+            <input type="checkbox" id="brotli-createBackup" checked> Создавать бэкапы (.backup) перед изменениями
+        </label>
+    </div>
+    <div class="form-group" style="display: flex; gap: 20px; flex-wrap: wrap;">
+        <div>
+            <label for="brotli-wasmLevel">Сжатие WASM (0-9):</label>
+            <input type="number" id="brotli-wasmLevel" class="text-input" min="0" max="9" value="9" style="width: 70px;">
+        </div>
+        <div>
+            <label for="brotli-pckLevel">Сжатие PCK (0-9):</label>
+            <input type="number" id="brotli-pckLevel" class="text-input" min="0" max="9" value="9" style="width: 70px;">
+        </div>
+    </div>
+</div>

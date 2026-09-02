@@ -57,3 +57,9 @@ class ApiRouter(BaseRouter):
             return {
                 "extensions": [".backup", ".tmp", ".gz", ".img", ".import", ".old", ".png"]
             }
+
+        @self.get("/platforms")
+        async def get_default_extensions():
+            return {
+                "platforms": ["None", "Yandex", "CrazyGames", "Poko", "PlayGamma"]
+            }

@@ -1,25 +1,73 @@
-// compress.js – полностью самодостаточный, с toast вместо alert
+// compress.js – пошаговое сжатие: сжатие → платформа → ZIP
 (function() {
     'use strict';
     if (window._compress_initialized) return;
     window._compress_initialized = true;
 
+    // ----------------------------- Единое хранилище настроек -----------------------------
+    const STORAGE_KEY = 'app:settings';
+
+    const defaultSettings = {
+        folderPath: '',
+        htmlFileName: 'index',
+        compressionTab: 'gzip',
+        gzip: { createBackup: true, wasmLevel: 9, pckLevel: 9 },
+        brotli: { createBackup: true, wasmLevel: 9, pckLevel: 9 },
+        excludeEnabled: true,
+        excludeCollapsed: false,
+        compressionCollapsed: false,
+        selectedPlatform: '',
+        excludeExtensions: ['.backup', '.tmp', '.gz', '.img', '.import', '.old', '.png']
+    };
+
+    function loadSettings() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+                const saved = JSON.parse(raw);
+                return deepMerge(defaultSettings, saved);
+            }
+        } catch (e) {}
+        return JSON.parse(JSON.stringify(defaultSettings));
+    }
+
+    function saveSettings(settings) {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+        } catch (e) {}
+    }
+
+    function deepMerge(target, source) {
+        const result = { ...target };
+        for (const key in source) {
+            if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+                result[key] = deepMerge(target[key] || {}, source[key]);
+            } else {
+                result[key] = source[key];
+            }
+        }
+        return result;
+    }
+
+    // ----------------------------- Вспомогательные функции -----------------------------
     function waitForElements(ids, callback, timeout = 5000) {
-        const startTime = Date.now();
+        const start = Date.now();
         const check = setInterval(() => {
-            const allExist = ids.every(id => document.getElementById(id) !== null);
-            if (allExist) {
+            if (ids.every(id => document.getElementById(id) !== null)) {
                 clearInterval(check);
                 callback();
-            } else if (Date.now() - startTime > timeout) {
+                return;
+            }
+            if (Date.now() - start > timeout) {
                 clearInterval(check);
-                console.warn('❌ Элементы не найдены за', timeout, 'ms:', ids);
+                console.warn('⚠️ Элементы не найдены:', ids);
             }
         }, 50);
     }
 
+    // ----------------------------- Основная инициализация -----------------------------
     function initCompress() {
-        console.log('🔧 Инициализация страницы сжатия');
+        let settings = loadSettings();
 
         const folderInput = document.getElementById('folderPath');
         const htmlInput = document.getElementById('htmlFileName');
@@ -27,48 +75,33 @@
         const selectHtmlBtn = document.getElementById('selectHtmlBtn');
         const startBtn = document.getElementById('startCompressBtn');
 
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const progressStatus = document.getElementById('progressStatus');
+
         if (!folderInput || !htmlInput || !selectFolderBtn || !selectHtmlBtn || !startBtn) {
-            console.error('❌ Не все элементы найдены');
+            console.error('❌ Критические элементы не найдены');
             return;
         }
 
-        // --- Загрузка из localStorage ---
-        const savedFolder = localStorage.getItem('app:folderPath');
-        const savedHtml = localStorage.getItem('app:htmlFileName');
-        if (savedFolder !== null) {
-            folderInput.value = savedFolder;
-            console.log('✅ Восстановлено folderPath:', savedFolder);
-        }
-        if (savedHtml !== null) {
-            htmlInput.value = savedHtml;
-            console.log('✅ Восстановлено htmlFileName:', savedHtml);
+        // Восстановление путей
+        folderInput.value = settings.folderPath || '';
+        htmlInput.value = settings.htmlFileName || 'index';
+
+        function saveAllSettings() {
+            settings.folderPath = folderInput.value;
+            settings.htmlFileName = htmlInput.value;
+            saveSettings(settings);
         }
 
-        // --- Сохранение ---
-        function saveAll() {
-            localStorage.setItem('app:folderPath', folderInput.value);
-            localStorage.setItem('app:htmlFileName', htmlInput.value);
-            console.log('💾 Сохранено folderPath:', folderInput.value);
-            console.log('💾 Сохранено htmlFileName:', htmlInput.value);
-        }
-
-        // --- Статусы ---
+        // ----- Статус файлов -----
         const statusItems = {
             js: document.getElementById('status-js'),
             wasm: document.getElementById('status-wasm'),
             pck: document.getElementById('status-pck'),
             html: document.getElementById('status-html')
         };
-        for (const key of Object.keys(statusItems)) {
-            if (!statusItems[key]) console.warn('⚠️ Статус не найден:', key);
-        }
-
-        const displayNames = {
-            js: 'JS',
-            wasm: 'WASM',
-            pck: 'PCK',
-            html: 'HTML'
-        };
+        const displayNames = { js: 'JS', wasm: 'WASM', pck: 'PCK', html: 'HTML' };
 
         function updateFileStatus(data) {
             for (const [key, info] of Object.entries(data.files)) {
@@ -87,20 +120,23 @@
             }
         }
 
+        function resetStatusIcons() {
+            for (const key of Object.keys(statusItems)) {
+                const item = statusItems[key];
+                if (!item) continue;
+                const icon = item.querySelector('i');
+                const span = item.querySelector('span');
+                icon.className = 'fas fa-circle';
+                icon.style.color = 'gray';
+                span.textContent = displayNames[key] || key.toUpperCase();
+            }
+        }
+
         function checkProject() {
             const folder = folderInput.value.trim();
             const htmlName = htmlInput.value.trim() || 'index';
-            console.log('🔍 Проверка проекта:', folder, htmlName);
-
             if (!folder) {
-                for (const key of Object.keys(statusItems)) {
-                    const item = statusItems[key];
-                    const icon = item.querySelector('i');
-                    const span = item.querySelector('span');
-                    icon.className = 'fas fa-circle';
-                    icon.style.color = 'gray';
-                    span.textContent = displayNames[key] || key.toUpperCase();
-                }
+                resetStatusIcons();
                 return;
             }
 
@@ -109,177 +145,155 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ folder, html_name: htmlName })
             })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => {
-                        throw new Error(err.detail || 'Ошибка проверки');
-                    });
-                }
-                return response.json();
-            })
-            .then(data => {
-                updateFileStatus(data);
-                if (!data.valid) {
-                    // Можно показать toast с предупреждением, но не обязательно
-                }
-            })
-            .catch(error => {
-                console.error('❌ Ошибка проверки проекта:', error);
-                showToast('Ошибка проверки проекта: ' + error.message, 'error');
-                for (const key of Object.keys(statusItems)) {
-                    const item = statusItems[key];
-                    const icon = item.querySelector('i');
-                    const span = item.querySelector('span');
-                    icon.className = 'fas fa-circle';
-                    icon.style.color = 'gray';
-                    span.textContent = displayNames[key] || key.toUpperCase();
-                }
-            });
+                .then(res => {
+                    if (!res.ok) return res.json().then(err => { throw new Error(err.detail || 'Ошибка проверки'); });
+                    return res.json();
+                })
+                .then(data => updateFileStatus(data))
+                .catch(err => {
+                    showToast('Ошибка проверки проекта: ' + err.message, 'error');
+                    resetStatusIcons();
+                });
         }
 
-        // --- Обработчики ---
-        selectFolderBtn.addEventListener('click', function () {
+        // ----- Обработчики выбора папки и HTML -----
+        selectFolderBtn.addEventListener('click', () => {
             fetch('/api/select-folder')
                 .then(res => res.json())
                 .then(data => {
                     if (data.path) {
                         folderInput.value = data.path;
-                        saveAll();
+                        saveAllSettings();
                         checkProject();
-                        showToast('Папка выбрана: ' + data.path, 'success');
                     }
                 })
-                .catch(err => {
-                    console.error('Ошибка выбора папки:', err);
-                    showToast('Не удалось выбрать папку', 'error');
-                });
+                .catch(() => showToast('Не удалось выбрать папку', 'error'));
         });
 
-        selectHtmlBtn.addEventListener('click', function () {
+        selectHtmlBtn.addEventListener('click', () => {
             fetch('/api/select-file')
                 .then(res => res.json())
                 .then(data => {
                     if (data.path) {
-                        const path = data.path;
-                        const dir = path.substring(0, path.lastIndexOf('\\') + 1);
-                        const fileName = path.substring(path.lastIndexOf('\\') + 1);
+                        const dir = data.path.substring(0, data.path.lastIndexOf('\\') + 1);
+                        const fileName = data.path.substring(data.path.lastIndexOf('\\') + 1);
                         const nameWithoutExt = fileName.replace(/\.[^/.]+$/, '');
                         folderInput.value = dir;
                         htmlInput.value = nameWithoutExt;
-                        saveAll();
+                        saveAllSettings();
                         checkProject();
-                        showToast('HTML-файл выбран: ' + fileName, 'success');
                     }
                 })
-                .catch(err => {
-                    console.error('Ошибка выбора HTML-файла:', err);
-                    showToast('Не удалось выбрать HTML-файл', 'error');
-                });
+                .catch(() => showToast('Не удалось выбрать HTML-файл', 'error'));
         });
 
-        folderInput.addEventListener('input', function() {
-            saveAll();
-            checkProject();
-        });
-        htmlInput.addEventListener('input', function() {
-            saveAll();
-            checkProject();
-        });
+        folderInput.addEventListener('input', () => { saveAllSettings(); checkProject(); });
+        htmlInput.addEventListener('input', () => { saveAllSettings(); checkProject(); });
 
-        // ---------- startBtn с toast ----------
-        startBtn.addEventListener('click', function () {
-            const folder = folderInput.value.trim();
-            const htmlName = htmlInput.value.trim() || 'index';
-            if (!folder) {
-                showToast('Выберите папку с билдом', 'warning');
-                return;
-            }
-            const compressionType = localStorage.getItem('app:compressionTab') || 'zip';
-            const createBackup = localStorage.getItem('app:createBackup') === 'true';
-            const wasmLevel = localStorage.getItem('app:wasmCompressionLevel') || '9';
-            const pckLevel = localStorage.getItem('app:pckCompressionLevel') || '9';
-            let excludeExtensions = [];
-            try {
-                const extData = localStorage.getItem('app:excludeExtensions');
-                if (extData) {
-                    excludeExtensions = JSON.parse(extData);
-                }
-            } catch(e) { excludeExtensions = []; }
-            const excludeStr = excludeExtensions.length ? excludeExtensions.join(', ') : 'нет';
-
-            // Формируем тело запроса
-            const payload = {
-                folder: folder,
-                html_name: htmlName,
-                compression_type: compressionType,
-                create_backup: createBackup,
-                wasm_level: wasmLevel,
-                pck_level: pckLevel,
-                exclude_extensions: excludeExtensions
-            };
-
-            // Отключаем кнопку, чтобы не было повторных кликов
-            startBtn.disabled = true;
-            startBtn.textContent = 'Сжатие...';
-
-            fetch('/compress/compress', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => {
-                        throw new Error(err.detail || 'Ошибка сжатия');
-                    });
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    showToast(data.message || 'Сжатие успешно завершено!', 'success');
-                } else {
-                    showToast(data.message || 'Неизвестная ошибка', 'error');
-                }
-            })
-            .catch(error => {
-                showToast('Ошибка: ' + error.message, 'error');
-            })
-            .finally(() => {
-                startBtn.disabled = false;
-                startBtn.textContent = 'Сжать';
-            });
-        });
-
-        // --- Остальной код (настройки, расширения) без изменений ---
+        // ----- Блок выбора сжатия (сворачиваемый) -----
+        const toggleCompressionBtn = document.getElementById('toggleCompressionBlock');
+        const compressionContent = document.getElementById('compressionContent');
         const compressionSelect = document.getElementById('compressionSelect');
-        const settingsBlocks = {
-            zip: document.getElementById('zip-settings'),
-            gzip: document.getElementById('gzip-settings'),
-            brotli: document.getElementById('brotli-settings')
-        };
 
-        const savedType = localStorage.getItem('app:compressionTab') || 'zip';
-        compressionSelect.value = savedType;
-
-        function showSettings(type) {
-            Object.keys(settingsBlocks).forEach(key => {
-                settingsBlocks[key].style.display = (key === type) ? 'block' : 'none';
-            });
-            localStorage.setItem('app:compressionTab', type);
+        if (settings.compressionCollapsed) {
+            compressionContent.classList.remove('open');
+            toggleCompressionBtn.classList.add('collapsed');
+        } else {
+            compressionContent.classList.add('open');
         }
-        showSettings(savedType);
-        compressionSelect.addEventListener('change', function() {
-            showSettings(this.value);
+
+        toggleCompressionBtn.addEventListener('click', () => {
+            compressionContent.classList.toggle('open');
+            toggleCompressionBtn.classList.toggle('collapsed');
+            settings.compressionCollapsed = !compressionContent.classList.contains('open');
+            saveSettings(settings);
         });
 
-        // ---------- Исключение расширений ----------
+        compressionSelect.value = settings.compressionTab || 'gzip';
+
+        function showSettingsForType(type) {
+            document.getElementById('gzip-settings').style.display = (type === 'gzip') ? 'block' : 'none';
+            document.getElementById('brotli-settings').style.display = (type === 'brotli') ? 'block' : 'none';
+            settings.compressionTab = type;
+            saveSettings(settings);
+            loadSettingsForType(type);
+        }
+
+        function loadSettingsForType(type) {
+            const typeSettings = settings[type] || { createBackup: true, wasmLevel: 9, pckLevel: 9 };
+            const backup = document.getElementById(`${type}-createBackup`);
+            const wasm = document.getElementById(`${type}-wasmLevel`);
+            const pck = document.getElementById(`${type}-pckLevel`);
+            if (backup) backup.checked = typeSettings.createBackup !== undefined ? typeSettings.createBackup : true;
+            if (wasm) wasm.value = typeSettings.wasmLevel || 9;
+            if (pck) pck.value = typeSettings.pckLevel || 9;
+        }
+
+        function saveSettingsForType(type) {
+            const backup = document.getElementById(`${type}-createBackup`);
+            const wasm = document.getElementById(`${type}-wasmLevel`);
+            const pck = document.getElementById(`${type}-pckLevel`);
+            if (!settings[type]) settings[type] = {};
+            if (backup) settings[type].createBackup = backup.checked;
+            if (wasm) settings[type].wasmLevel = parseInt(wasm.value) || 9;
+            if (pck) settings[type].pckLevel = parseInt(pck.value) || 9;
+            saveSettings(settings);
+        }
+
+        document.addEventListener('change', (e) => {
+            const id = e.target.id;
+            if (id && (id.endsWith('-createBackup') || id.endsWith('-wasmLevel') || id.endsWith('-pckLevel'))) {
+                const type = id.split('-')[0];
+                saveSettingsForType(type);
+            }
+        });
+        document.addEventListener('input', (e) => {
+            const id = e.target.id;
+            if (id && (id.endsWith('-wasmLevel') || id.endsWith('-pckLevel'))) {
+                const type = id.split('-')[0];
+                saveSettingsForType(type);
+            }
+        });
+
+        compressionSelect.addEventListener('change', function() {
+            showSettingsForType(this.value);
+        });
+
+        showSettingsForType(compressionSelect.value);
+
+        // ----- Блок исключения расширений -----
+        const excludeEnabled = document.getElementById('excludeEnabled');
+        const excludeContent = document.getElementById('excludeContent');
+        const toggleExcludeBtn = document.getElementById('toggleExcludeBlock');
+
+        excludeEnabled.checked = settings.excludeEnabled !== undefined ? settings.excludeEnabled : true;
+
+        if (settings.excludeCollapsed) {
+            excludeContent.classList.remove('open');
+            toggleExcludeBtn.classList.add('collapsed');
+        } else {
+            excludeContent.classList.add('open');
+        }
+
+        excludeEnabled.addEventListener('change', () => {
+            settings.excludeEnabled = excludeEnabled.checked;
+            saveSettings(settings);
+        });
+
+        toggleExcludeBtn.addEventListener('click', () => {
+            excludeContent.classList.toggle('open');
+            toggleExcludeBtn.classList.toggle('collapsed');
+            settings.excludeCollapsed = !excludeContent.classList.contains('open');
+            saveSettings(settings);
+        });
+
+        // ----- Список расширений -----
         const excludeInput = document.getElementById('excludeExtensionInput');
         const addBtn = document.getElementById('addExtensionBtn');
         const extensionList = document.getElementById('extensionList');
         const removeBtn = document.getElementById('removeSelectedExtensionsBtn');
 
-        let extensions = [];
+        let extensions = settings.excludeExtensions || ['.backup', '.tmp', '.gz', '.img', '.import', '.old', '.png'];
 
         function renderExtensions() {
             extensionList.innerHTML = '';
@@ -291,35 +305,23 @@
         }
 
         function saveExtensions() {
-            localStorage.setItem('app:excludeExtensions', JSON.stringify(extensions));
+            settings.excludeExtensions = extensions;
+            saveSettings(settings);
         }
 
         function loadDefaultExtensions() {
-            fetch('/compress/default-extensions')
+            if (extensions && extensions.length > 0) {
+                renderExtensions();
+                return;
+            }
+            fetch('/api/default-extensions')
                 .then(res => {
-                    if (!res.ok) throw new Error('Ошибка загрузки');
+                    if (!res.ok) throw new Error();
                     return res.json();
                 })
                 .then(data => {
-                    const defaults = data.extensions || ['.backup', '.tmp', '.gz', '.img', '.import', '.old', '.png'];
-                    const saved = localStorage.getItem('app:excludeExtensions');
-                    if (saved) {
-                        try {
-                            const parsed = JSON.parse(saved);
-                            if (Array.isArray(parsed) && parsed.length > 0) {
-                                extensions = parsed;
-                            } else {
-                                extensions = defaults;
-                                saveExtensions();
-                            }
-                        } catch {
-                            extensions = defaults;
-                            saveExtensions();
-                        }
-                    } else {
-                        extensions = defaults;
-                        saveExtensions();
-                    }
+                    extensions = data.extensions || ['.backup', '.tmp', '.gz', '.img', '.import', '.old', '.png'];
+                    saveExtensions();
                     renderExtensions();
                 })
                 .catch(() => {
@@ -329,74 +331,193 @@
                 });
         }
 
-        addBtn.addEventListener('click', function() {
+        addBtn.addEventListener('click', () => {
             const val = excludeInput.value.trim();
             if (val && !extensions.includes(val)) {
                 extensions.push(val);
                 excludeInput.value = '';
                 renderExtensions();
                 saveExtensions();
-                showToast(`Расширение "${val}" добавлено`, 'success');
-            } else if (val) {
-                showToast('Такое расширение уже есть', 'warning');
             }
         });
 
-        removeBtn.addEventListener('click', function() {
+        removeBtn.addEventListener('click', () => {
             const checkboxes = extensionList.querySelectorAll('input[type="checkbox"]:checked');
             const indices = Array.from(checkboxes).map(cb => parseInt(cb.dataset.index));
-            if (indices.length === 0) {
-                showToast('Выберите расширения для удаления', 'warning');
-                return;
-            }
+            if (!indices.length) return;
             extensions = extensions.filter((_, i) => !indices.includes(i));
             renderExtensions();
             saveExtensions();
-            showToast(`Удалено ${indices.length} расширений`, 'info');
         });
 
         loadDefaultExtensions();
 
-        // ---------- Настройки Gzip ----------
-        const createBackupCheckbox = document.getElementById('createBackup');
-        const wasmLevelInput = document.getElementById('wasmCompressionLevel');
-        const pckLevelInput = document.getElementById('pckCompressionLevel');
-        if (createBackupCheckbox && wasmLevelInput && pckLevelInput) {
-            const savedBackup = localStorage.getItem('app:createBackup');
-            if (savedBackup !== null) {
-                createBackupCheckbox.checked = savedBackup === 'true';
-            } else {
-                createBackupCheckbox.checked = true;
-            }
-            const savedWasm = localStorage.getItem('app:wasmCompressionLevel');
-            if (savedWasm !== null) {
-                wasmLevelInput.value = savedWasm;
-            } else {
-                wasmLevelInput.value = 9;
-            }
-            const savedPck = localStorage.getItem('app:pckCompressionLevel');
-            if (savedPck !== null) {
-                pckLevelInput.value = savedPck;
-            } else {
-                pckLevelInput.value = 9;
-            }
+        // ----- Загрузка платформ -----
+        const platformSelect = document.getElementById('platformSelect');
 
-            createBackupCheckbox.addEventListener('change', function() {
-                localStorage.setItem('app:createBackup', this.checked);
-            });
-            wasmLevelInput.addEventListener('input', function() {
-                localStorage.setItem('app:wasmCompressionLevel', this.value);
-            });
-            pckLevelInput.addEventListener('input', function() {
-                localStorage.setItem('app:pckCompressionLevel', this.value);
-            });
+        function loadPlatforms() {
+            fetch('/api/platforms')
+                .then(res => {
+                    if (!res.ok) throw new Error('Ошибка загрузки платформ');
+                    return res.json();
+                })
+                .then(data => {
+                    const platforms = data.platforms || [];
+                    const savedPlatform = settings.selectedPlatform || '';
+                    platformSelect.innerHTML = '';
+                    platforms.forEach(p => {
+                        const option = document.createElement('option');
+                        option.value = p;
+                        option.textContent = p;
+                        platformSelect.appendChild(option);
+                    });
+                    if (savedPlatform && platforms.includes(savedPlatform)) {
+                        platformSelect.value = savedPlatform;
+                    } else {
+                        platformSelect.value = platforms[0] || '';
+                    }
+                })
+                .catch(err => {
+                    console.error('Ошибка загрузки платформ:', err);
+                    platformSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
+                });
         }
 
-        saveAll();
+        loadPlatforms();
 
-        if (folderInput.value.trim()) {
-            setTimeout(checkProject, 200);
-        }
+        platformSelect.addEventListener('change', function() {
+            settings.selectedPlatform = this.value;
+            saveSettings(settings);
+        });
+
+        // ----- Пошаговое выполнение сжатия (сжатие → платформа → ZIP) -----
+        startBtn.addEventListener('click', async function () {
+            const folder = folderInput.value.trim();
+            const htmlName = htmlInput.value.trim() || 'index';
+            if (!folder) {
+                showToast('Выберите папку с билдом', 'warning');
+                return;
+            }
+
+            const compressionType = compressionSelect.value;
+            const typeSettings = settings[compressionType] || { createBackup: true, wasmLevel: 9, pckLevel: 9 };
+            const createBackup = typeSettings.createBackup;
+            const wasmLevel = parseInt(typeSettings.wasmLevel) || 9;
+            const pckLevel = parseInt(typeSettings.pckLevel) || 9;
+
+            const includeInArchive = excludeEnabled.checked;
+            if (!includeInArchive) {
+                showToast('Упаковка в архив отключена', 'info');
+                return;
+            }
+
+            const platform = platformSelect.value;
+            
+            
+            const basePayload = {
+                folder,
+                filename: htmlName,
+            };
+
+            const stages = [];
+
+            // 1. Сжатие – добавляем параметры сжатия
+            stages.push({
+                name: 'compress',
+                label: 'Сжатие файлов',
+                url: '/compress/compress',
+                payload: {
+                    ...basePayload,
+                    compression_type: compressionType,
+                    create_backup: createBackup,
+                    wasm_level: wasmLevel,
+                    pck_level: pckLevel
+                }
+            });
+
+            // 2. Платформа – добавляем platform (если выбрана и не None)
+            if (platform && platform !== 'None') {
+                stages.push({
+                    name: 'platform',
+                    label: 'Добавление SDK платформы',
+                    url: '/compress/platform',
+                    payload: {
+                        ...basePayload,
+                        platform: platform
+                    }
+                });
+            }
+
+            // 3. Упаковка в ZIP – добавляем exclude_extensions (только здесь)
+            stages.push({
+                name: 'zippack',
+                label: 'Упаковка в ZIP',
+                url: '/compress/zippack',
+                payload: {
+                    ...basePayload,
+                    exclude_extensions: extensions
+                }
+            });
+
+            // Блокируем кнопку и сбрасываем прогресс
+            startBtn.disabled = true;
+            startBtn.textContent = 'Выполнение...';
+            progressFill.style.width = '0%';
+            progressText.textContent = '0%';
+            progressStatus.textContent = 'Подготовка...';
+
+            let success = true;
+            let currentStage = 0;
+            const totalStages = stages.length;
+
+            try {
+                for (const stage of stages) {
+                    currentStage++;
+                    progressStatus.textContent = `${stage.label}... (${currentStage}/${totalStages})`;
+                    const percent = Math.round((currentStage - 1) / totalStages * 100);
+                    progressFill.style.width = percent + '%';
+                    progressText.textContent = percent + '%';
+
+                    const response = await fetch(stage.url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(stage.payload)
+                    });
+
+                    if (!response.ok) {
+                        const errData = await response.json().catch(() => ({}));
+                        throw new Error(errData.detail || errData.message || `Ошибка на этапе ${stage.label}`);
+                    }
+
+                    const data = await response.json();
+                    if (!data.success) {
+                        throw new Error(data.message || `Ошибка на этапе ${stage.label}`);
+                    }
+
+                    showToast(`${stage.label}: ${data.message || 'выполнено'}`, 'success');
+
+                    const newPercent = Math.round(currentStage / totalStages * 100);
+                    progressFill.style.width = newPercent + '%';
+                    progressText.textContent = newPercent + '%';
+                }
+
+                progressStatus.textContent = 'Все этапы завершены успешно!';
+                progressFill.style.width = '100%';
+                progressText.textContent = '100%';
+
+            } catch (error) {
+                success = false;
+                progressStatus.textContent = `Ошибка: ${error.message}`;
+                showToast(`Ошибка на этапе ${currentStage}: ${error.message}`, 'error');
+            } finally {
+                startBtn.disabled = false;
+                startBtn.textContent = 'Сжать';
+            }
+        });
+
+        // Сохраняем пути и первичная проверка
+        saveAllSettings();
+        if (folderInput.value.trim()) setTimeout(checkProject, 200);
     }
 
     waitForElements(

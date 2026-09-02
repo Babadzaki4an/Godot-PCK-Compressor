@@ -31,5 +31,5 @@ if __name__ == "__main__":
     webview.start(
         icon='app/static/icons/favicon.ico',
         storage_path=str(USER_DATA_DIR),
-        private_mode=True,
+        private_mode=False,
     )
