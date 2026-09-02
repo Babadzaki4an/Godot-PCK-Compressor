@@ -1,1 +1,1 @@
-from .check_project_request import CheckProjectRequest
+from .models import CheckProjectRequest, CompressRequest

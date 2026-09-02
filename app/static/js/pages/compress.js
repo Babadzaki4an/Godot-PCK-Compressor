@@ -1,4 +1,4 @@
-// compress.js – полностью самодостаточный
+// compress.js – полностью самодостаточный, с toast вместо alert
 (function() {
     'use strict';
     if (window._compress_initialized) return;
@@ -63,6 +63,13 @@
             if (!statusItems[key]) console.warn('⚠️ Статус не найден:', key);
         }
 
+        const displayNames = {
+            js: 'JS',
+            wasm: 'WASM',
+            pck: 'PCK',
+            html: 'HTML'
+        };
+
         function updateFileStatus(data) {
             for (const [key, info] of Object.entries(data.files)) {
                 const item = statusItems[key];
@@ -76,7 +83,7 @@
                     icon.className = 'fas fa-times-circle';
                     icon.style.color = '#ff5555';
                 }
-                span.textContent = info.name;
+                span.textContent = displayNames[key] || key.toUpperCase();
             }
         }
 
@@ -92,7 +99,7 @@
                     const span = item.querySelector('span');
                     icon.className = 'fas fa-circle';
                     icon.style.color = 'gray';
-                    span.textContent = key.toUpperCase();
+                    span.textContent = displayNames[key] || key.toUpperCase();
                 }
                 return;
             }
@@ -112,21 +119,25 @@
             })
             .then(data => {
                 updateFileStatus(data);
+                if (!data.valid) {
+                    // Можно показать toast с предупреждением, но не обязательно
+                }
             })
             .catch(error => {
                 console.error('❌ Ошибка проверки проекта:', error);
+                showToast('Ошибка проверки проекта: ' + error.message, 'error');
                 for (const key of Object.keys(statusItems)) {
                     const item = statusItems[key];
                     const icon = item.querySelector('i');
                     const span = item.querySelector('span');
                     icon.className = 'fas fa-circle';
                     icon.style.color = 'gray';
-                    span.textContent = key.toUpperCase();
+                    span.textContent = displayNames[key] || key.toUpperCase();
                 }
             });
         }
 
-        // --- Обработчики с сохранением ---
+        // --- Обработчики ---
         selectFolderBtn.addEventListener('click', function () {
             fetch('/api/select-folder')
                 .then(res => res.json())
@@ -135,9 +146,13 @@
                         folderInput.value = data.path;
                         saveAll();
                         checkProject();
+                        showToast('Папка выбрана: ' + data.path, 'success');
                     }
                 })
-                .catch(err => console.error('Ошибка выбора папки:', err));
+                .catch(err => {
+                    console.error('Ошибка выбора папки:', err);
+                    showToast('Не удалось выбрать папку', 'error');
+                });
         });
 
         selectHtmlBtn.addEventListener('click', function () {
@@ -153,9 +168,13 @@
                         htmlInput.value = nameWithoutExt;
                         saveAll();
                         checkProject();
+                        showToast('HTML-файл выбран: ' + fileName, 'success');
                     }
                 })
-                .catch(err => console.error('Ошибка выбора HTML-файла:', err));
+                .catch(err => {
+                    console.error('Ошибка выбора HTML-файла:', err);
+                    showToast('Не удалось выбрать HTML-файл', 'error');
+                });
         });
 
         folderInput.addEventListener('input', function() {
@@ -167,19 +186,18 @@
             checkProject();
         });
 
-        // ---------- ОБНОВЛЁННЫЙ startBtn с исключаемыми расширениями ----------
+        // ---------- startBtn с toast ----------
         startBtn.addEventListener('click', function () {
             const folder = folderInput.value.trim();
             const htmlName = htmlInput.value.trim() || 'index';
             if (!folder) {
-                alert('Выберите папку с билдом');
+                showToast('Выберите папку с билдом', 'warning');
                 return;
             }
             const compressionType = localStorage.getItem('app:compressionTab') || 'zip';
             const createBackup = localStorage.getItem('app:createBackup') === 'true';
             const wasmLevel = localStorage.getItem('app:wasmCompressionLevel') || '9';
             const pckLevel = localStorage.getItem('app:pckCompressionLevel') || '9';
-            // Читаем исключаемые расширения
             let excludeExtensions = [];
             try {
                 const extData = localStorage.getItem('app:excludeExtensions');
@@ -189,10 +207,51 @@
             } catch(e) { excludeExtensions = []; }
             const excludeStr = excludeExtensions.length ? excludeExtensions.join(', ') : 'нет';
 
-            alert(`Запуск сжатия:\nПапка: ${folder}\nHTML-файл: ${htmlName}\nТип: ${compressionType}\nBackup: ${createBackup ? 'Да' : 'Нет'}\nWASM уровень: ${wasmLevel}\nPCK уровень: ${pckLevel}\nИсключаемые расширения: ${excludeStr}`);
+            // Формируем тело запроса
+            const payload = {
+                folder: folder,
+                html_name: htmlName,
+                compression_type: compressionType,
+                create_backup: createBackup,
+                wasm_level: wasmLevel,
+                pck_level: pckLevel,
+                exclude_extensions: excludeExtensions
+            };
+
+            // Отключаем кнопку, чтобы не было повторных кликов
+            startBtn.disabled = true;
+            startBtn.textContent = 'Сжатие...';
+
+            fetch('/compress/compress', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.detail || 'Ошибка сжатия');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message || 'Сжатие успешно завершено!', 'success');
+                } else {
+                    showToast(data.message || 'Неизвестная ошибка', 'error');
+                }
+            })
+            .catch(error => {
+                showToast('Ошибка: ' + error.message, 'error');
+            })
+            .finally(() => {
+                startBtn.disabled = false;
+                startBtn.textContent = 'Сжать';
+            });
         });
 
-        // --- Выпадающий список типа сжатия ---
+        // --- Остальной код (настройки, расширения) без изменений ---
         const compressionSelect = document.getElementById('compressionSelect');
         const settingsBlocks = {
             zip: document.getElementById('zip-settings'),
@@ -214,7 +273,7 @@
             showSettings(this.value);
         });
 
-        // ---------- Исключение расширений (с сервера) ----------
+        // ---------- Исключение расширений ----------
         const excludeInput = document.getElementById('excludeExtensionInput');
         const addBtn = document.getElementById('addExtensionBtn');
         const extensionList = document.getElementById('extensionList');
@@ -277,15 +336,23 @@
                 excludeInput.value = '';
                 renderExtensions();
                 saveExtensions();
+                showToast(`Расширение "${val}" добавлено`, 'success');
+            } else if (val) {
+                showToast('Такое расширение уже есть', 'warning');
             }
         });
 
         removeBtn.addEventListener('click', function() {
             const checkboxes = extensionList.querySelectorAll('input[type="checkbox"]:checked');
             const indices = Array.from(checkboxes).map(cb => parseInt(cb.dataset.index));
+            if (indices.length === 0) {
+                showToast('Выберите расширения для удаления', 'warning');
+                return;
+            }
             extensions = extensions.filter((_, i) => !indices.includes(i));
             renderExtensions();
             saveExtensions();
+            showToast(`Удалено ${indices.length} расширений`, 'info');
         });
 
         loadDefaultExtensions();
@@ -295,7 +362,6 @@
         const wasmLevelInput = document.getElementById('wasmCompressionLevel');
         const pckLevelInput = document.getElementById('pckCompressionLevel');
         if (createBackupCheckbox && wasmLevelInput && pckLevelInput) {
-            // Восстановление
             const savedBackup = localStorage.getItem('app:createBackup');
             if (savedBackup !== null) {
                 createBackupCheckbox.checked = savedBackup === 'true';
@@ -315,7 +381,6 @@
                 pckLevelInput.value = 9;
             }
 
-            // Сохранение при изменениях
             createBackupCheckbox.addEventListener('change', function() {
                 localStorage.setItem('app:createBackup', this.checked);
             });
@@ -327,10 +392,8 @@
             });
         }
 
-        // --- Принудительное сохранение дефолтных значений ---
         saveAll();
 
-        // --- Проверка, если папка уже есть ---
         if (folderInput.value.trim()) {
             setTimeout(checkProject, 200);
         }

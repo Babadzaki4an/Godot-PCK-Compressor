@@ -1,7 +1,9 @@
 # app/routes/api.py
+import time
+
 from app.utils.dialog import DialogHelper
 from .router_base import BaseRouter
-from ..models import CheckProjectRequest
+from app.models import CheckProjectRequest, CompressRequest
 import os
 from fastapi import HTTPException
 
@@ -17,3 +19,9 @@ class CompressRouter(BaseRouter):
             return {
                 "extensions": [".backup", ".tmp", ".gz", ".img", ".import", ".old", ".png"]
             }
+
+        @self.post("/compress")
+        async def compress():
+            time.sleep(1)
+
+            return {"success": True, "message": "Сжатие выполнено"}

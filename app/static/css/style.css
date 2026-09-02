@@ -344,34 +344,50 @@ a:hover {
     text-decoration: underline;
 }
 
-
-/* Блок статуса файлов */
+/* ---------- Блок статуса файлов (исправлено для длинных надписей) ---------- */
 .file-status {
     margin-top: 20px;
     padding: 15px;
     background: var(--input-bg);
     border-radius: 6px;
+    overflow: hidden; /* чтобы содержимое не вылезало за скруглённые углы */
 }
 .file-status label {
     font-weight: bold;
     display: block;
     margin-bottom: 8px;
 }
+
 .status-row {
     display: flex;
-    flex-wrap: nowrap;      /* запрещаем перенос */
-    gap: 20px;
+    flex-wrap: wrap;        /* разрешаем перенос на следующую строку */
+    gap: 10px 20px;         /* отступы между элементами */
     align-items: center;
 }
+
 .status-item {
     display: flex;
     align-items: center;
     gap: 8px;
     font-size: 14px;
-    white-space: nowrap;
+    max-width: 100%;        /* не выходит за пределы родителя */
+    overflow: hidden;       /* скрываем переполнение */
+    text-overflow: ellipsis;/* добавляем многоточие, если текст слишком длинный */
+    white-space: nowrap;    /* текст в одну строку с обрезанием */
+    word-break: break-word; /* запасной вариант переноса, но неактивен из-за nowrap */
 }
+/* Если хотите именно перенос строк вместо обрезания, закомментируйте выше и раскомментируйте ниже: */
+/*
+.status-item {
+    white-space: normal;
+    text-overflow: clip;
+    overflow: visible; 
+}
+*/
+
 .status-item i {
     font-size: 14px;
+    flex-shrink: 0; /* иконки не сжимаются */
 }
 .status-item .fa-circle {
     color: gray;
@@ -382,10 +398,12 @@ a:hover {
 .status-item .fa-times-circle {
     color: #ff5555;
 }
+
 .status-message {
     margin-top: 8px;
     font-size: 14px;
     color: var(--text-secondary);
+    word-break: break-word; /* для длинных сообщений */
 }
 
 input[type="checkbox"] {
