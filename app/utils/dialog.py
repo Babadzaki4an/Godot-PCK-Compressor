@@ -16,6 +16,16 @@ class DialogHelper:
             return None
 
     @staticmethod
+    def _format_filetypes(filetypes: Optional[List[Tuple[str, str]]]) -> Optional[List[str]]:
+        if not filetypes:
+            return None
+        formatted = []
+        for desc, mask in filetypes:
+            # Формат: "Описание (*.ext)"
+            formatted.append(f"{desc} ({mask})")
+        return formatted
+
+    @staticmethod
     def select_folder(
         title: str = "Выберите папку",
         initial_dir: Optional[str] = None
@@ -51,8 +61,9 @@ class DialogHelper:
                 "dialog_type": webview.FileDialog.OPEN,
                 "directory": initial_dir or ""
             }
-            # Фильтры отключены, так как текущая версия pywebview выдаёт ошибку
-            # При необходимости раскомментируйте и укажите правильный формат
+            formatted = DialogHelper._format_filetypes(filetypes)
+            if formatted:
+                kwargs["file_types"] = formatted
             result = window.create_file_dialog(**kwargs)
             if result and isinstance(result, tuple) and len(result) > 0:
                 return result[0]
@@ -78,17 +89,23 @@ class DialogHelper:
                 "directory": initial_dir or "",
                 "save_filename": "file" + defaultextension
             }
+            formatted = DialogHelper._format_filetypes(filetypes)
+            if formatted:
+                kwargs["file_types"] = formatted
             result = window.create_file_dialog(**kwargs)
             if result and isinstance(result, tuple) and len(result) > 0:
                 return result[0]
             return None
         except Exception:
+            # fallback, если SAVE не поддерживается
             try:
                 kwargs = {
                     "dialog_type": webview.OPEN_DIALOG,
                     "directory": initial_dir or "",
                     "save_filename": "file" + defaultextension
                 }
+                if formatted:
+                    kwargs["file_types"] = formatted
                 result = window.create_file_dialog(**kwargs)
                 if result and isinstance(result, tuple) and len(result) > 0:
                     return result[0]
