@@ -6,7 +6,7 @@ from .router_base import BaseRouter
 from app.models import PlatformRequest, CompressRequest, ZippackRequest
 import os
 from fastapi import HTTPException
-from app.logic import ZipPacker
+from app.logic import ZipPacker, Compressor, GzipCompressor, BrotliCompressor
 
 
 class CompressRouter(BaseRouter):
@@ -15,12 +15,27 @@ class CompressRouter(BaseRouter):
 
         @self.post("/compress")
         async def compress(request: CompressRequest):
-            time.sleep(1)
-            # логика сжатия (использует compression_type, wasm_level, pck_level, create_backup)
-            return {"success": True, "message": "Сжатие выполнено"}
+            result = False
+            compressor: Compressor = self._select_compressor(request.compression_type)
+
+            try:
+                result, wasm_msg, pck_msg = compressor.compress(
+                    folder=request.folder,
+                    filename=request.filename,
+                    pck_compress_level=request.pck_level,
+                    wasm_compress_level=request.wasm_level,
+                    create_backups=request.create_backup,
+                )
+                return {"success": result, "message": f"Сжатие выполнено <br>{wasm_msg} <br>{pck_msg}" if result else "Ошибка сжатия"}
+            
+            except Exception as e:
+                return {"success": False, "message": f"Ошибка {e}"}
+
+             
 
         @self.post("/platform")
         async def platform(request: PlatformRequest):
+            
             time.sleep(1)
             # логика интеграции SDK для указанной платформы (request.platform)
             return {"success": True, "message": f"{request.platform} SDK добавлено"}
@@ -34,3 +49,14 @@ class CompressRouter(BaseRouter):
                 return {"success": False, "message": f"{e}"}
             else:
                 return {"success": True, "message": "Упаковано в ZIP"}
+
+    def _select_compressor(self, compression_type: str) -> Compressor:
+        match compression_type:
+            case 'gzip':
+                return GzipCompressor
+
+            case 'brotli':
+                return BrotliCompressor
+
+            case _:
+                return Compressor
