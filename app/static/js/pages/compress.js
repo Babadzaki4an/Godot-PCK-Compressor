@@ -12,7 +12,7 @@
         htmlFileName: 'index',
         compressionTab: 'gzip',
         gzip: { createBackup: true, wasmLevel: 9, pckLevel: 9 },
-        brotli: { createBackup: true, wasmLevel: 9, pckLevel: 9 },
+        brotli: { createBackup: true, wasmLevel: 11, pckLevel: 11 },
         excludeEnabled: true,
         excludeCollapsed: false,
         compressionCollapsed: false,
@@ -72,6 +72,7 @@
         const folderInput = document.getElementById('folderPath');
         const htmlInput = document.getElementById('htmlFileName');
         const selectFolderBtn = document.getElementById('selectFolderBtn');
+        const openFolderBtn = document.getElementById('openFolderBtn');
         const selectHtmlBtn = document.getElementById('selectHtmlBtn');
         const startBtn = document.getElementById('startCompressBtn');
 
@@ -79,8 +80,8 @@
         const progressText = document.getElementById('progressText');
         const progressStatus = document.getElementById('progressStatus');
 
-        if (!folderInput || !htmlInput || !selectFolderBtn || !selectHtmlBtn || !startBtn) {
-            console.error('❌ Критические элементы не найдены');
+        if (!folderInput || !htmlInput || !selectFolderBtn || !openFolderBtn || !selectHtmlBtn || !startBtn) {
+            console.error('Критические элементы не найдены');
             return;
         }
 
@@ -168,6 +169,24 @@
                     }
                 })
                 .catch(() => showToast('Не удалось выбрать папку', 'error'));
+        });
+
+        openFolderBtn.addEventListener('click', () => {
+            const folder = folderInput.value.trim();
+            if (!folder) {
+                showToast('Сначала укажите папку с билдом', 'warning');
+                return;
+            }
+            fetch('/api/open-folder/' + encodeURIComponent(folder), { method: 'GET' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.ok) {
+                        showToast('Папка открыта в проводнике', 'success');
+                    } else {
+                        showToast(data.error || 'Не удалось открыть папку', 'error');
+                    }
+                })
+                .catch(() => showToast('Ошибка запроса к серверу', 'error'));
         });
 
         selectHtmlBtn.addEventListener('click', () => {
@@ -399,6 +418,8 @@
                 return;
             }
 
+                                                const btnSpinner = document.getElementById('compressSpinner');
+            const btnLabel = document.getElementById('compressBtnLabel');
             const compressionType = compressionSelect.value;
             const typeSettings = settings[compressionType] || { createBackup: true, wasmLevel: 9, pckLevel: 9 };
             const createBackup = typeSettings.createBackup;
@@ -411,6 +432,7 @@
                 return;
             }
 
+                                                showToast('Сжатие начато', 'info');
             const platform = platformSelect.value;
             
             
@@ -460,8 +482,9 @@
             });
 
             // Блокируем кнопку и сбрасываем прогресс
-            startBtn.disabled = true;
-            startBtn.textContent = 'Выполнение...';
+                                                startBtn.disabled = true;
+            if (btnSpinner) btnSpinner.style.display = 'inline-block';
+            if (btnLabel) btnLabel.textContent = 'Выполнение...';
             progressFill.style.width = '0%';
             progressText.textContent = '0%';
             progressStatus.textContent = 'Подготовка...';
@@ -510,8 +533,9 @@
                 progressStatus.textContent = `Ошибка: ${error.message}`;
                 showToast(`Ошибка на этапе ${currentStage}: ${error.message}`, 'error');
             } finally {
-                startBtn.disabled = false;
-                startBtn.textContent = 'Сжать';
+                                                                startBtn.disabled = false;
+                if (btnSpinner) btnSpinner.style.display = 'none';
+                if (btnLabel) btnLabel.textContent = 'Сжать';
             }
         });
 

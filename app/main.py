@@ -36,7 +36,6 @@ class App:
         self.fastapi.include_router(ParticalPageRouter(prefix="/partials", templates=self.templates))
         self.fastapi.include_router(CompressRouter(prefix="/compress"))
 
-
     @property
     def app(self) -> FastAPI:
         return self.fastapi

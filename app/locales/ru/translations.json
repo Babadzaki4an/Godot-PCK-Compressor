@@ -17,6 +17,6 @@
   "settings_language": "Язык",
   "settings_compression_level": "Уровень сжатия",
   "about_title": "О программе",
-  "about_version": "Версия 1.0",
+  "about_version": "Версия 1.0.5",
   "about_description": "Утилита для разработчиков игр на Godot."
 }

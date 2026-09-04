@@ -252,8 +252,8 @@ p, label {
 .folder-selector input:read-only {
     cursor: default;
 }
-.folder-selector button {
-    padding: 10px 16px;
+.second-button {
+    padding: 12px 16px;
     background: var(--btn-bg);
     border: none;
     border-radius: 4px;
@@ -261,7 +261,7 @@ p, label {
     cursor: pointer;
     transition: background 0.2s;
 }
-.folder-selector button:hover {
+.second-button:hover {
     background: var(--btn-hover);
 }
 
@@ -411,6 +411,7 @@ input[type="checkbox"] {
     accent-color: var(--accent) !important;
     cursor: pointer;
 }
+
 
 /* ---------- Адаптив для мобильных ---------- */
 @media (max-width: 768px) {

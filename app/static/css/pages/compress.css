@@ -250,3 +250,7 @@
     outline: none;
     border-color: var(--accent);
 }
+
+#openFolderBtn {
+    margin-left: 5px;
+}

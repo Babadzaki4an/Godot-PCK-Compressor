@@ -63,3 +63,19 @@ class ApiRouter(BaseRouter):
             return {
                 "platforms": ["None", "Yandex", "CrazyGames", "Poko", "PlayGamma"]
             }
+
+        @self.get("/open-folder/{path:path}")
+        async def open_folder(path: str = None):
+            if not path:
+                return {"ok": False, "error": "Путь не передан"}
+
+            if not os.path.exists(path):
+                return {"ok": False, "error": f"Путь не существует: {path}"}
+
+            try:
+                opened = DialogHelper.open_in_explorer(path)
+                if opened:
+                    return {"ok": True}
+                return {"ok": False, "error": "open folder failed"}
+            except Exception as e:
+                return {"ok": False, "error": str(e)}

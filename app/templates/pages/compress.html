@@ -6,7 +6,7 @@
         <label for="folderPath">{{ _("compress_select_folder") }}</label>
         <div class="folder-selector">
             <input type="text" id="folderPath" data-persist placeholder="C:/path/to/build" class="text-input">
-            <button id="selectFolderBtn"><i class="fas fa-folder-open"></i> Выбрать</button>
+            <button id="selectFolderBtn" class="second-button"><i class="fas fa-folder-open"></i> Выбрать</button>
         </div>
     </div>
 
@@ -15,7 +15,7 @@
         <label for="htmlFileName">{{ _("compress_html_name") }}</label>
         <div class="folder-selector">
             <input type="text" id="htmlFileName" data-persist value="index" placeholder="{{ _('compress_html_placeholder') }}" class="text-input">
-            <button id="selectHtmlBtn"><i class="fas fa-file-code"></i> Выбрать HTML</button>
+            <button id="selectHtmlBtn" class="second-button"><i class="fas fa-file-code"></i> Выбрать HTML</button>
         </div>
     </div>
 
@@ -94,8 +94,10 @@
     <!-- Кнопка запуска -->
     <div class="form-group">
         <button id="startCompressBtn" class="primary-btn">
-            <i class="fas fa-play"></i> {{ _("compress_start") }}
+            <i class="fas fa-play"></i> <span id="compressBtnLabel">{{ _("compress_start") }}</span> 
+            <i class="fas fa-spinner fa-spin" id="compressSpinner" style="display: none; margin-left: 8px;"></i>
         </button>
+        <button id="openFolderBtn" class="second-button"><i class="fas fa-folder-open"></i>Открыть</button>
     </div>
 
     <!-- Прогресс и статус -->
