@@ -64,14 +64,17 @@ class ResourceManager():
     @classmethod
     def get_plarform_names(cls) -> list[str]:
         if cls.plarform_names:
-            return cls.plarform_names 
+            return cls.plarform_names
 
         for platform_file in cls.PLATFORM_DIR.iterdir():
             if platform_file.is_file():
                 platform_name = platform_file.name.removesuffix(".json")
-                cls.plarform_names.append(platform_name)
+                if platform_name not in cls.plarform_names:
+                    cls.plarform_names.append(platform_name)
 
         cls.plarform_names.sort()
+        cls.plarform_names.insert(0, "None")
+
         return cls.plarform_names
 
     @classmethod

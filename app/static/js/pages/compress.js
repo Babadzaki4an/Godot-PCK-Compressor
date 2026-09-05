@@ -186,7 +186,7 @@
                         showToast(i18n.tf(data.error) || i18n.t('toast_open_folder_failed'), 'error');
                     }
                 })
-                .catch(() => showToast(i18n.t('toast_server_error'), 'error'));
+                .catch(err => showToast(i18n.t('toast_server_error') + (err && err.message ? ': ' + err.message : ''), 'error'));
         });
 
         selectHtmlBtn.addEventListener('click', () => {
@@ -509,12 +509,14 @@
 
                     if (!response.ok) {
                         const errData = await response.json().catch(() => ({}));
-                        throw new Error(errData.detail || errData.message || `${i18n.t('stage_error_prefix')} ${stage.label}`);
+                        const reason = errData.message_extra || errData.message || '';
+                        throw new Error(`${i18n.tf(errData.message) || i18n.tf(errData.detail) || i18n.t('stage_error_prefix') + ' ' + stage.label}${reason ? ': ' + reason : ''}`);
                     }
 
                     const data = await response.json();
                     if (!data.success) {
-                        throw new Error(data.message || `${i18n.t('stage_error_prefix')} ${stage.label}`);
+                        const reason = data.message_extra ? ': ' + data.message_extra : '';
+                        throw new Error(i18n.tf(data.message) + reason);
                     }
 
                     const doneMsg = i18n.tf(data.message) || i18n.t('stage_done');

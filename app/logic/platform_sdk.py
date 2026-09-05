@@ -8,6 +8,10 @@ class PlatformSdkInjector():
     """Вставляет скрипт и инициализацию SDK """
     @staticmethod
     def inject_sdk(platform: str, folder: str, filename: str) -> bool:
+        # Платформа "None"/пустая — ничего не вставляем, считаем успехом
+        if not platform or platform.lower() in ("none", "нет"):
+            return True
+
         platform_data = ResourceManager.get_platform_sdk_data(platform)
 
         if not platform_data:

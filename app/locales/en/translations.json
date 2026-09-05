@@ -23,6 +23,7 @@
   "compress_select_folder_short": "Select",
   "compress_select_html_short": "Select HTML",
   "compress_project_composition": "Project composition:",
+  "compression_none": "No compression",
   "compress_type": "Compression type:",
   "compress_platform": "Platform:",
   "compress_zip_archive": "Package into archive",
@@ -74,5 +75,7 @@
   "api_path_not_passed": "Path not provided",
   "api_path_not_exist": "Path does not exist",
   "about_license": "License",
-  "about_license_name": "GPLv3 (GNU General Public License v3)"
+  "about_license_name": "GPLv3 (GNU General Public License v3)",
+  "api_sdk_failed": "Failed to add platform SDK",
+  "api_zip_error": "Failed to create archive"
 }

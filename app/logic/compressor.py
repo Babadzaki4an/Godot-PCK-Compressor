@@ -96,7 +96,3 @@ class Compressor():
     def _is_compressed(cls, filepath: str) -> bool:
         """Проверка на сжатие"""
         return False
-
-    @classmethod
-    def _is_compressed(cls, filepath: str) -> bool:
-        return False
