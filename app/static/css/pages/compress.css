@@ -190,33 +190,13 @@
     cursor: pointer;
 }
 
-/* Кнопки */
-.secondary-btn {
-    padding: 6px 14px;
-    background: var(--btn-bg);
-    border: none;
-    border-radius: 4px;
-    color: var(--text-primary);
-    cursor: pointer;
-    transition: background 0.2s;
-    white-space: nowrap;
-}
-.secondary-btn:hover {
-    background: var(--btn-hover);
-}
+/* Кнопки определены глобально в style.css (.button, .primary-button, .second-button, .danger-button) */
 
-.danger-btn {
-    padding: 6px 14px;
-    background: #ff5555;
-    border: none;
-    border-radius: 4px;
-    color: var(--bg-body);
-    cursor: pointer;
-    transition: background 0.2s;
-    font-weight: bold;
-}
-.danger-btn:hover {
-    background: #ff7777;
+/* Подсказка внутри сворачиваемых блоков */
+.hint-text {
+    margin: 0 0 10px 0;
+    font-size: 13px;
+    color: var(--text-muted);
 }
 
 /* Блок выбора платформы */
@@ -253,61 +233,6 @@
 
 #openFolderBtn {
     margin-left: 5px;
-}
-
-/* Кнопки сообщения пользователю */
-.primary-btn {
-    padding: 10px 16px;
-    background: var(--accent);
-    border: none;
-    border-radius: 6px;
-    color: var(--bg-body);
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-.primary-btn:hover {
-    background: var(--accent-hover);
-}
-.primary-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-.secondary-btn {
-    padding: 10px 16px;
-    background: var(--btn-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    color: var(--text-primary);
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-.secondary-btn:hover {
-    background: var(--btn-hover);
-}
-.secondary-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-/* Общий класс для кнопок */
-.compress-button {
-    padding: 10px 16px;
-    font-size: 14px;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: opacity 0.2s ease;
 }
 
 /* Переключатель языков в sidebar */

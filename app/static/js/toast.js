@@ -66,9 +66,9 @@
         toast.style.cssText = `
             padding: 14px 20px;
             border-radius: 8px;
-            background: #282a36;
-            color: #f8f8f2;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            background: var(--bg-app);
+            color: var(--text-primary);
+            box-shadow: 0 8px 24px var(--shadow);
             border-left: 5px solid;
             pointer-events: auto;
             animation: slideIn 0.3s ease forwards;
@@ -78,12 +78,12 @@
             word-break: break-word;
         `;
 
-        // Цвета для разных типов
+        // Цвета для разных типов (из CSS-переменных темы)
         const colors = {
-            info: '#bd93f9',
-            success: '#50fa7b',
-            warning: '#f1fa8c',
-            error: '#ff5555'
+            info: 'var(--accent)',
+            success: 'var(--success)',
+            warning: 'var(--warning)',
+            error: 'var(--danger)'
         };
         toast.style.borderLeftColor = colors[type] || colors.info;
 

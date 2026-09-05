@@ -21,6 +21,10 @@
     --menu-hover: #2a2a3a;
     --btn-bg: #44475a;
     --btn-hover: #5a5d72;
+    --danger: #ff5555;
+    --danger-hover: #ff7777;
+    --warning: #f1fa8c;
+    --status-neutral: #808080;
     --shadow: rgba(0, 0, 0, 0.3);
 }
 
@@ -252,36 +256,79 @@ p, label {
 .folder-selector input:read-only {
     cursor: default;
 }
-.second-button {
-    padding: 12px 16px;
-    background: var(--btn-bg);
+/* ---------- Кнопки (общие для всего проекта) ---------- */
+.button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    font-size: 14px;
     border: none;
-    border-radius: 4px;
-    color: var(--text-primary);
+    border-radius: 6px;
     cursor: pointer;
-    transition: background 0.2s;
+    white-space: nowrap;
+    transition: background 0.2s ease, opacity 0.2s ease;
 }
-.second-button:hover {
+.button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+.primary-button {
+    background: var(--accent);
+    color: var(--bg-body);
+    font-weight: 500;
+}
+.primary-button:hover:not(:disabled) {
+    background: var(--accent-hover);
+}
+.second-button {
+    background: var(--btn-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+.second-button:hover:not(:disabled) {
     background: var(--btn-hover);
 }
-
-.primary-btn {
-    padding: 12px 30px;
-    background: var(--success);
-    border: none;
-    border-radius: 4px;
+.danger-button {
+    background: var(--danger);
     color: var(--bg-body);
     font-weight: bold;
-    font-size: 16px;
-    cursor: pointer;
-    transition: background 0.2s;
 }
-.primary-btn:hover {
-    background: var(--success-hover);
+.danger-button:hover:not(:disabled) {
+    background: var(--danger-hover);
 }
-.primary-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+/* Компактная кнопка (для плотных рядов) */
+.button-compact {
+    padding: 6px 14px;
+    font-size: 13px;
+}
+/* Спиннер внутри кнопки (скрыт по умолчанию, включается из JS) */
+.btn-spinner {
+    margin-left: 8px;
+}
+
+/* ---------- Утилиты (общие для всего проекта) ---------- */
+/* Горизонтальный ряд с выравниванием по центру */
+.flex-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+/* Ряд полей формы с переносом */
+.field-row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+/* Компактный select (автоширина) */
+.select-compact {
+    width: auto;
+    min-width: 120px;
+    padding: 6px 10px;
+}
+/* Компактный числовой input */
+.input-compact {
+    width: 70px;
 }
 
 .progress-container {
@@ -390,13 +437,13 @@ a:hover {
     flex-shrink: 0; /* иконки не сжимаются */
 }
 .status-item .fa-circle {
-    color: gray;
+    color: var(--status-neutral);
 }
 .status-item .fa-check-circle {
     color: var(--success);
 }
 .status-item .fa-times-circle {
-    color: #ff5555;
+    color: var(--danger);
 }
 
 .status-message {

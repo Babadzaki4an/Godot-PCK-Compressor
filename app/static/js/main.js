@@ -12,7 +12,6 @@ document.addEventListener('DOMContentLoaded', function () {
     // Переключение страниц
     const menuItems = document.querySelectorAll('.menu-item');
     const pages = {
-        home: document.getElementById('page-home'),
         compress: document.getElementById('page-compress'),
         settings: document.getElementById('page-settings'),
         about: document.getElementById('page-about')
@@ -25,10 +24,6 @@ document.addEventListener('DOMContentLoaded', function () {
             item.classList.remove('active');
             if (item.dataset.page === pageId) item.classList.add('active');
         });
-        // Инициализатор только для home (остальные сами себя инициализируют)
-        if (pageId === 'home' && window.initHome) {
-            window.initHome();
-        }
     }
 
     menuItems.forEach(item => {
@@ -37,8 +32,15 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Инициализация home по умолчанию
-    if (window.initHome) window.initHome();
+    // Активируем пункт меню, соответствующий начальной странице
+    const activePage = document.querySelector('.page.active');
+    if (activePage) {
+        menuItems.forEach(item => {
+            if (item.dataset.page === activePage.id.replace('page-', '')) {
+                item.classList.add('active');
+            }
+        });
+    }
 
     // Переключатель языков (в шапке и на странице настроек)
     const langSelects = document.querySelectorAll('#langSelect, #settingsLangSelect');

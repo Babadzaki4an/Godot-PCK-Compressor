@@ -115,7 +115,7 @@
                     icon.style.color = 'var(--success)';
                 } else {
                     icon.className = 'fas fa-times-circle';
-                    icon.style.color = '#ff5555';
+                    icon.style.color = 'var(--danger)';
                 }
                 span.textContent = displayNames[key] || key.toUpperCase();
             }

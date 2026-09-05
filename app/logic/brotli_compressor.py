@@ -8,6 +8,9 @@ from app.resources import ResourceManager
 class BrotliCompressor(Compressor):
     """Сжатие файлов Godot алгоритмом Brotli."""
 
+    CHUNK_SIZE = 1024 * 1024  # 1 МБ — размер чанка для потоковой обработки
+    CHECK_BYTES = 4 * 1024 * 1024  # сколько первых байт анализируем при проверке "уже сжат"
+
     @classmethod
     def _change_js(cls, folder: str, filename: str) -> bool:
         changes = ResourceManager.get_brotli_js_changes()
@@ -22,11 +25,13 @@ class BrotliCompressor(Compressor):
             orig = os.path.getsize(path)
             if cls._is_compressed(path):
                 return True, f"{extention} уже сжат {cls._fmt(orig)}"
-            with open(path, 'rb') as f_in:
-                data = f_in.read()
-            compressed = brotli.compress(data, quality=compress_level)
-            with open(temp, 'wb') as f_out:
-                f_out.write(compressed)
+
+            # Потоковое сжатие: читаем и пишем кусками, файл не грузится в память целиком
+            compressor = brotli.Compressor(quality=compress_level)
+            with open(path, 'rb') as f_in, open(temp, 'wb') as f_out:
+                while chunk := f_in.read(cls.CHUNK_SIZE):
+                    f_out.write(compressor.process(chunk))
+                f_out.write(compressor.finish())
             new = os.path.getsize(temp)
             os.remove(path)
             shutil.move(temp, path)
@@ -38,15 +43,25 @@ class BrotliCompressor(Compressor):
 
     @classmethod
     def _is_compressed(cls, filepath: str) -> bool:
-        """Проверяем сигнатуры: gzip-магия или успешная brotli-распаковка."""
         with open(filepath, 'rb') as f:
-            data = f.read()
+            try:
+                d = brotli.Decompressor()
+                checked = 0
+                while chunk := f.read(cls.CHUNK_SIZE):
+                    d.process(chunk)
+                    checked += len(chunk)
+                    if checked >= cls.CHECK_BYTES or d.is_finished():
+                        return True
+                return d.is_finished()
+            except Exception:
+                return False #cls._is_brotli_exact(filepath)
 
-        if data[:2] == b'\x1f\x8b':
-            return True
-
+    @classmethod
+    def _is_brotli_exact(cls, filepath: str) -> bool:
+        """Точная проверка через полную распаковку."""
         try:
-            brotli.decompress(data)
+            with open(filepath, 'rb') as f:
+                brotli.decompress(f.read())
             return True
         except brotli.error:
             return False

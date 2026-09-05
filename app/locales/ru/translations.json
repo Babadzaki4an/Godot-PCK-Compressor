@@ -26,6 +26,7 @@
   "compress_type": "Тип сжатия:",
   "compress_platform": "Платформа:",
   "compress_zip_archive": "Упаковать в архив",
+  "compress_exclude_hint": "Исключить из архива:",
   "compress_add": "Добавить",
   "compress_remove_selected": "Удалить выбранное",
   "compress_open_folder": "Открыть",

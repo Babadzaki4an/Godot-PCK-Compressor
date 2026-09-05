@@ -26,6 +26,7 @@
   "compress_type": "Compression type:",
   "compress_platform": "Platform:",
   "compress_zip_archive": "Package into archive",
+  "compress_exclude_hint": "Exclude from archive:",
   "compress_add": "Add",
   "compress_remove_selected": "Remove selected",
   "compress_open_folder": "Open",
