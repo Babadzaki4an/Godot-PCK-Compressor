@@ -19,3 +19,8 @@ class ChangeResource(FromDictMixin):
 class InsertAfter(FromDictMixin):
     find: str
     insert: str
+
+@dataclass
+class PlatformSDKData(FromDictMixin):
+    sdk_script: str
+    sdk_init: str

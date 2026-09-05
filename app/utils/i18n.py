@@ -19,7 +19,6 @@ class Translator:
         return cls._instance
 
     def __init__(self, locales_dir: Path = None, default_lang: str = "en"):
-        # Синглтон: инициализируем только один раз
         if getattr(self, "_initialized", False):
             return
 
@@ -29,13 +28,6 @@ class Translator:
         self._translations: Dict[str, Dict[str, str]] = {}
         self._load_translations()
         self._initialized = True
-
-    @classmethod
-    def get_instance(cls) -> "Translator":
-        """Возвращает экземпляр синглтона (без создания нового)."""
-        if cls._instance is None:
-            cls()  # инициализируем с параметрами по умолчанию
-        return cls._instance
 
     def _load_translations(self):
         """Загружает все найденные JSON-файлы переводов."""

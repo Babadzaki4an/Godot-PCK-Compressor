@@ -1,0 +1,4 @@
+{
+    "sdk_script" : "<script src='https://bridge.playgama.com/v1/stable/playgama-bridge.js'>\n",
+    "sdk_init" : "<script>bridge.initialize().then(() => {}).catch(error => {});</script>"
+}

@@ -1,0 +1,4 @@
+{
+    "sdk_script" : "<script src='https://sdk.crazygames.com/crazygames-sdk-v3.js'></script>\n",
+    "sdk_init" : "<script>await window.CrazyGames.SDK.init();</script>"
+}

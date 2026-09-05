@@ -6,8 +6,9 @@ from .router_base import BaseRouter
 from app.models import PlatformRequest, CompressRequest, ZippackRequest
 import os
 from fastapi import HTTPException
-from app.logic import ZipPacker, Compressor, GzipCompressor, BrotliCompressor
 
+from app.logic import ZipPacker, Compressor, GzipCompressor, BrotliCompressor, PlatformSdkInjector
+from app.resources import ResourceManager
 
 class CompressRouter(BaseRouter):
     def __init__(self, prefix: str = "/"):
@@ -36,13 +37,10 @@ class CompressRouter(BaseRouter):
                 return {"success": False, "message": "api_error", "message_extra": str(e)}
 
              
-
         @self.post("/platform")
         async def platform(request: PlatformRequest):
-            
-            time.sleep(1)
-            # логика интеграции SDK для указанной платформы (request.platform)
-            return {"success": True, "message": "api_sdk_added", "message_extra": request.platform}
+            result = PlatformSdkInjector.inject_sdk(request.platform, request.folder, request.filename)
+            return {"success": result, "message": "api_sdk_added", "message_extra": request.platform}
 
         @self.post("/zippack")
         async def zippack(request: ZippackRequest):

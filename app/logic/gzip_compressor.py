@@ -73,10 +73,11 @@ class GzipCompressor(Compressor):
 
     @classmethod
     def _additional(cls, folder: str, filename: str,) -> bool:
-        return all([
+        results = [
             cls._add_pako_inflate_in_folder(folder),
             cls._add_pako_inflate_in_html(folder, filename)
-        ])
+        ]
+        return all(results)
 
     @classmethod
     def _is_compressed(cls, filepath: str) -> bool:

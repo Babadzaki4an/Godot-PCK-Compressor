@@ -1,0 +1,4 @@
+{
+    "sdk_script" : "<script src='https://game-cdn.poki.com/scripts/v2/poki-sdk.js'></script>",
+    "sdk_init" : "<script>PokiSDK.init().then(() => {}).catch(error => {})</script>"
+}

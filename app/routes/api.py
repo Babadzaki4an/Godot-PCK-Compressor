@@ -2,6 +2,7 @@
 from app.utils import DialogHelper, Translator
 from .router_base import BaseRouter
 from app.models import CheckProjectRequest, Translation
+from app.resources import ResourceManager
 import os
 from fastapi import HTTPException
 
@@ -62,7 +63,7 @@ class ApiRouter(BaseRouter):
         @self.get("/platforms")
         async def get_default_extensions():
             return {
-                "platforms": ["None", "Yandex", "CrazyGames", "Poko", "PlayGamma"]
+                "platforms": ResourceManager.get_plarform_names()
             }
 
         @self.get("/open-folder/{path:path}")

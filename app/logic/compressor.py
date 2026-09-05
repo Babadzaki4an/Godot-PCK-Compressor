@@ -18,7 +18,7 @@ class Compressor():
         is_pck_compressed, pck_msg = cls._compress_file(folder, filename, ".pck", pck_compress_level)
         is_wasm_compressed, wasm_msg = cls._compress_file(folder, filename, ".wasm", wasm_compress_level)
         is_aditional_processed = cls._additional(folder, filename)
-        
+        print([is_js_processed, is_pck_compressed, is_wasm_compressed, is_aditional_processed])
         return  all([is_js_processed, is_pck_compressed, is_wasm_compressed, is_aditional_processed]), wasm_msg, pck_msg
 
     @classmethod

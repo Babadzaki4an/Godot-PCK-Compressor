@@ -1,0 +1,4 @@
+{
+    "sdk_script" : "<script src='/sdk.js'></script>",
+    "sdk_init" : "const ysdk = await YaGames.init();"
+}
