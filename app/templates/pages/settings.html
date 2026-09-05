@@ -1,4 +1,5 @@
-<h1>{{ _("settings_title") }}</h1>
+<h1 data-i18n="settings_title">{{ _("settings_title") }}</h1>
+
 <div class="settings-group">
     <label for="settingsLangSelect" data-i18n="settings_language">{{ _("settings_language") }}</label>
     <select id="settingsLangSelect" class="lang-select">
@@ -6,4 +7,49 @@
         <option value="{{ code }}">{{ name }}</option>
         {% endfor %}
     </select>
+</div>
+
+<!-- Настройки сборки движка -->
+<div class="settings-group build-section">
+    <h3 data-i18n="settings_build_title">Настройки сборки движка</h3>
+
+    <div class="field-row">
+        <label for="engineSrcPath" data-i18n="settings_engine_source">Папка с исходными файлами движка:</label>
+        <div class="folder-selector">
+            <input type="text" id="engineSrcPath" data-persist placeholder="C:/path/to/godot-engine" class="text-input">
+            <button id="selectEngineSrcBtn" class="button second-button"><i class="fas fa-folder-open"></i></button>
+        </div>
+    </div>
+
+    <div class="field-row">
+        <label for="emsdkPath" data-i18n="settings_emsdk">Папка с emsdk:</label>
+        <div class="folder-selector">
+            <input type="text" id="emsdkPath" data-persist placeholder="C:/path/to/emsdk" class="text-input">
+            <button id="selectEmsdkBtn" class="button second-button"><i class="fas fa-folder-open"></i></button>
+        </div>
+    </div>
+
+    <div class="field-row">
+        <label for="wasmOptPath" data-i18n="settings_wasm_opt">Папка с wasm-opt:</label>
+        <div class="folder-selector">
+            <input type="text" id="wasmOptPath" data-persist placeholder="C:/path/to/wasm-opt" class="text-input">
+            <button id="selectWasmOptBtn" class="button second-button"><i class="fas fa-folder-open"></i></button>
+        </div>
+    </div>
+
+    <div class="field-row">
+        <label for="customBuildScript" data-i18n="settings_custom_script">Папка со скриптами сборки:</label>
+        <div class="folder-selector">
+            <input type="text" id="customBuildScript" data-persist placeholder="C:/path/to/build-scripts" class="text-input">
+            <button id="selectCustomScriptBtn" class="button second-button"><i class="fas fa-folder-open"></i></button>
+        </div>
+    </div>
+
+    <div class="field-row">
+        <label for="gdbuildProfilesPath" data-i18n="settings_gdbuild_profiles">Папка с профилями .gdbuild:</label>
+        <div class="folder-selector">
+            <input type="text" id="gdbuildProfilesPath" data-persist placeholder="C:/path/to/profiles" class="text-input">
+            <button id="selectGdbuildBtn" class="button second-button"><i class="fas fa-folder-open"></i></button>
+        </div>
+    </div>
 </div>

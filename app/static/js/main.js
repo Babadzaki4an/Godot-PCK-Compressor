@@ -62,4 +62,32 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     }
+
+    // Обработчики кнопок выбора папок в настройках сборки движка
+    const buildPathSelectors = [
+        { btnId: 'selectEngineSrcBtn', inputId: 'engineSrcPath', title: 'Выберите папку с исходными файлами движка' },
+        { btnId: 'selectEmsdkBtn', inputId: 'emsdkPath', title: 'Выберите папку с emsdk' },
+        { btnId: 'selectWasmOptBtn', inputId: 'wasmOptPath', title: 'Выберите папку с wasm-opt' },
+        { btnId: 'selectCustomScriptBtn', inputId: 'customBuildScript', title: 'Выберите папку со скриптами сборки' },
+        { btnId: 'selectGdbuildBtn', inputId: 'gdbuildProfilesPath', title: 'Выберите папку с профилями .gdbuild' },
+    ];
+
+    buildPathSelectors.forEach(function (selector) {
+        const btn = document.getElementById(selector.btnId);
+        const input = document.getElementById(selector.inputId);
+        if (btn && input) {
+            btn.addEventListener('click', async function () {
+                try {
+                    const response = await fetch('/api/select-folder');
+                    const data = await response.json();
+                    if (data.path) {
+                        input.value = data.path;
+                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                } catch (e) {
+                    console.error('Ошибка выбора папки:', e);
+                }
+            });
+        }
+    });
 });

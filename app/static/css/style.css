@@ -371,6 +371,7 @@ p, label {
     display: flex;
     flex-direction: column;
     gap: 5px;
+    padding: 16px 20px;
 }
 .settings-group select {
     padding: 8px 12px;
@@ -380,6 +381,23 @@ p, label {
     color: var(--text-primary);
     font-size: 14px;
     max-width: 200px;
+}
+.settings-group h3 {
+    margin: 10px 0 5px;
+    font-size: 16px;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
+}
+.settings-group .field-row {
+    margin-bottom: 12px;
+}
+.settings-group .field-row label {
+    min-width: 180px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
 }
 
 /* ---------- Ссылки ---------- */
@@ -442,6 +460,66 @@ a:hover {
 }
 .status-item .fa-times-circle {
     color: var(--danger);
+}
+
+/* Настройки сборки движка — выравнивание полей ввода */
+.settings-group .field-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    gap: 12px;
+}
+
+.settings-group .field-row label {
+    min-width: 240px !important;
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.settings-group .field-row .folder-selector {
+    flex: 1;
+    min-width: 280px;
+    display: flex;
+    gap: 8px;
+}
+
+.settings-group .field-row .folder-selector .text-input {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 14px;
+    border: 1px solid var(--input-border, #555);
+    border-radius: 4px;
+    background: var(--input-bg, #3d3f4b);
+    color: var(--text-primary, #f8f8f2);
+}
+
+.settings-group .field-row .button {
+    padding: 8px 12px;
+    min-width: 40px;
+    justify-content: center;
+}
+
+.build-section {
+    flex-direction: column;
+}
+
+.build-section h3 {
+    font-size: 16px;
+    margin: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color, #3d3f4b);
+}
+
+.build-section .field-row {
+    padding: 0 16px;
+}
+
+.build-section .field-row label {
+    min-width: 200px !important;
+    max-width: 200px;
+    word-wrap: break-word;
+    white-space: normal;
+    line-height: 1.4;
 }
 
 .status-message {
