@@ -1,27 +1,27 @@
 <link rel="stylesheet" href="/static/css/pages/compress.css">
-<h1>{{ _("compress_title") }}</h1>
+<h1 data-i18n="compress_title">Сжатие билда</h1>
 <div class="compress-form">
     <!-- Поле выбора папки -->
     <div class="form-group">
-        <label for="folderPath">{{ _("compress_select_folder") }}</label>
+        <label for="folderPath" data-i18n="compress_select_folder">Выберите папку с билдом:</label>
         <div class="folder-selector">
             <input type="text" id="folderPath" data-persist placeholder="C:/path/to/build" class="text-input">
-            <button id="selectFolderBtn" class="second-button"><i class="fas fa-folder-open"></i> Выбрать</button>
+                                    <button id="selectFolderBtn" class="secondary-btn compress-button"><i class="fas fa-folder-open"></i> <span data-i18n="compress_select_folder_short">Выбрать</span></button>
         </div>
     </div>
 
     <!-- Имя HTML-файла -->
     <div class="form-group">
-        <label for="htmlFileName">{{ _("compress_html_name") }}</label>
+                <label for="htmlFileName" data-i18n="compress_html_name">Имя HTML-файла:</label>
         <div class="folder-selector">
             <input type="text" id="htmlFileName" data-persist value="index" placeholder="{{ _('compress_html_placeholder') }}" class="text-input">
-            <button id="selectHtmlBtn" class="second-button"><i class="fas fa-file-code"></i> Выбрать HTML</button>
+                                    <button id="selectHtmlBtn" class="secondary-btn compress-button"><i class="fas fa-file-code"></i> <span data-i18n="compress_select_html_short">Выбрать HTML</span></button>
         </div>
     </div>
 
     <!-- Блок статуса файлов -->
     <div class="file-status" id="fileStatus">
-        <label>Состав проекта:</label>
+                <label data-i18n="compress_project_composition">Состав проекта:</label>
         <div class="status-row">
             <div class="status-item" id="status-js">
                 <i class="fas fa-circle" style="color: gray;"></i> <span>JS</span>
@@ -42,7 +42,7 @@
     <div class="collapsible-block compression-block">
         <div class="collapsible-header compression-header">
             <div style="display: flex; align-items: center; gap: 10px;">
-                <label for="compressionSelect" style="margin: 0; font-weight: 500; white-space: nowrap;">Тип сжатия:</label>
+                <label for="compressionSelect" style="margin: 0; font-weight: 500; white-space: nowrap;" data-i18n="compress_type">Тип сжатия:</label>
                 <select id="compressionSelect" class="text-input" style="width: auto; min-width: 120px; padding: 6px 10px;">
                     <option value="gzip">Gzip</option>
                     <option value="brotli">Brotli</option>
@@ -64,9 +64,9 @@
 
     <!-- Платформа -->
     <div class="platform-block">
-        <label for="platformSelect">Платформа:</label>
+        <label for="platformSelect" data-i18n="compress_platform">Платформа:</label>
         <select id="platformSelect" class="text-input">
-            <option value="">Загрузка...</option>
+            <option value="" data-i18n="compress_loading">Загрузка...</option>
         </select>
     </div>
 
@@ -75,7 +75,7 @@
         <div class="collapsible-header exclude-header">
             <label>
                 <input type="checkbox" id="excludeEnabled" checked> 
-                <span>Упаковать в архив</span>
+                <span data-i18n="compress_zip_archive">Упаковать в архив</span>
             </label>
             <button id="toggleExcludeBlock" class="toggle-btn">
                 <i class="fas fa-chevron-down"></i>
@@ -84,32 +84,32 @@
         <div id="excludeContent" class="collapsible-content open">
             <div class="extension-input-group">
                 <input type="text" id="excludeExtensionInput" placeholder=".backup">
-                <button id="addExtensionBtn" class="secondary-btn">Добавить</button>
+                <button id="addExtensionBtn" class="secondary-btn" data-i18n="compress_add">Добавить</button>
             </div>
             <ul id="extensionList" class="extension-list"></ul>
-            <button id="removeSelectedExtensionsBtn" class="danger-btn">Удалить выбранное</button>
+            <button id="removeSelectedExtensionsBtn" class="danger-btn" data-i18n="compress_remove_selected">Удалить выбранное</button>
         </div>
     </div>
 
     <!-- Кнопка запуска -->
     <div class="form-group">
         <button id="startCompressBtn" class="primary-btn">
-            <i class="fas fa-play"></i> <span id="compressBtnLabel">{{ _("compress_start") }}</span> 
+                        <i class="fas fa-play"></i> <span id="compressBtnLabel" data-i18n="compress_start">Запустить сжатие</span>  
             <i class="fas fa-spinner fa-spin" id="compressSpinner" style="display: none; margin-left: 8px;"></i>
         </button>
-        <button id="openFolderBtn" class="second-button"><i class="fas fa-folder-open"></i>Открыть</button>
+                <button id="openFolderBtn" class="secondary-btn compress-button"><i class="fas fa-folder-open"></i> <span data-i18n="compress_open_folder">Открыть</span></button>
     </div>
 
     <!-- Прогресс и статус -->
     <div class="progress-container">
-        <label>{{ _("compress_progress") }}</label>
+        <label data-i18n="compress_progress">{{ _("compress_progress") }}</label>
         <div class="progress-bar">
             <div id="progressFill" style="width: 0%;"></div>
         </div>
         <span id="progressText">0%</span>
     </div>
     <div class="status-container">
-        <label>{{ _("compress_status") }}</label>
-        <div id="progressStatus">Ожидание...</div>
+        <label data-i18n="compress_status">{{ _("compress_status") }}</label>
+        <div id="progressStatus" data-i18n="status_waiting">Ожидание...</div>
     </div>
 </div>

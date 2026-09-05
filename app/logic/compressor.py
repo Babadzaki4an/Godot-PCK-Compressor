@@ -1,3 +1,4 @@
+import os
 import re
 import shutil
 
@@ -11,13 +12,13 @@ class Compressor():
         """1 - success, 2 - wasm message, 3 - pck message"""
         if create_backups:
             if not cls._create_backup(folder, filename, [".pck", ".wasm", ".js"]):
-                return False
+                return False, "", ""
 
         is_js_processed = cls._change_js(folder, filename)
         is_pck_compressed, pck_msg = cls._compress_file(folder, filename, ".pck", pck_compress_level)
         is_wasm_compressed, wasm_msg = cls._compress_file(folder, filename, ".wasm", wasm_compress_level)
         is_aditional_processed = cls._additional(folder, filename)
-
+        
         return  all([is_js_processed, is_pck_compressed, is_wasm_compressed, is_aditional_processed]), wasm_msg, pck_msg
 
     @classmethod
@@ -38,7 +39,13 @@ class Compressor():
             extention = cls._check_extention(extention)
 
             full_path = f"{folder}/{filename}{extention}"
-            shutil.copy2(full_path, full_path + ".backup")
+            backup_path = full_path + ".backup"
+
+            # Не затираем существующий бэкап повторным сжатием
+            if os.path.exists(backup_path):
+                continue
+
+            shutil.copy2(full_path, backup_path)
 
         return True
 
@@ -67,6 +74,10 @@ class Compressor():
         with open(js_file, 'r', encoding='utf-8') as f:
             content = f.read()
 
+        # JS уже пропатчен — считаем успехом (повторный запуск сжатия)
+        if all(change.to in content for change in changes):
+            return True
+
         for change in changes:
             old = change.change
             new = change.to
@@ -78,7 +89,7 @@ class Compressor():
 
         with open(js_file, 'w', encoding='utf-8') as f:
             f.write(content)
-
+        
         return True
 
     @classmethod

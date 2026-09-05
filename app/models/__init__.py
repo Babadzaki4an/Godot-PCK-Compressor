@@ -1,1 +1,1 @@
-from .models import CheckProjectRequest, CompressRequest, PlatformRequest, ZippackRequest
+from .models import CheckProjectRequest, CompressRequest, PlatformRequest, ZippackRequest, Translation

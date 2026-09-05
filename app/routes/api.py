@@ -1,7 +1,7 @@
 # app/routes/api.py
-from app.utils.dialog import DialogHelper
+from app.utils import DialogHelper, Translator
 from .router_base import BaseRouter
-from ..models import CheckProjectRequest
+from app.models import CheckProjectRequest, Translation
 import os
 from fastapi import HTTPException
 
@@ -30,7 +30,7 @@ class ApiRouter(BaseRouter):
             folder = request.folder
             html_name = request.html_name
             if not folder or not os.path.isdir(folder):
-                raise HTTPException(status_code=400, detail="Папка не существует")
+                raise HTTPException(status_code=400, detail="api_folder_not_exist")
 
             expected = {
                 "js": f"{html_name}.js",
@@ -49,8 +49,9 @@ class ApiRouter(BaseRouter):
                     all_exist = False
                     missing.append(filename)
 
-            message = "Все файлы найдены" if all_exist else f"Отсутствуют: {', '.join(missing)}"
-            return {"valid": all_exist, "files": result, "message": message}
+            message_key = "api_files_ok" if all_exist else "api_files_missing"
+            message_extra = "" if all_exist else ", ".join(missing)
+            return {"valid": all_exist, "files": result, "message": message_key, "message_extra": message_extra}
 
         @self.get("/default-extensions")
         async def get_default_extensions():
@@ -67,10 +68,10 @@ class ApiRouter(BaseRouter):
         @self.get("/open-folder/{path:path}")
         async def open_folder(path: str = None):
             if not path:
-                return {"ok": False, "error": "Путь не передан"}
+                return {"ok": False, "error": "api_path_not_passed"}
 
             if not os.path.exists(path):
-                return {"ok": False, "error": f"Путь не существует: {path}"}
+                return {"ok": False, "error": f"api_path_not_exist: {path}"}
 
             try:
                 opened = DialogHelper.open_in_explorer(path)
@@ -79,3 +80,10 @@ class ApiRouter(BaseRouter):
                 return {"ok": False, "error": "open folder failed"}
             except Exception as e:
                 return {"ok": False, "error": str(e)}
+
+        @self.post("/get-translation")
+        async def get_translation(request: Translation):
+            translation = Translator().get_translations(request.lang)
+            return {"t": translation}
+
+            

@@ -147,12 +147,12 @@
                 body: JSON.stringify({ folder, html_name: htmlName })
             })
                 .then(res => {
-                    if (!res.ok) return res.json().then(err => { throw new Error(err.detail || 'Ошибка проверки'); });
+                    if (!res.ok) return res.json().then(err => { throw new Error(err.detail || i18n.t('toast_check_project_error')); });
                     return res.json();
                 })
                 .then(data => updateFileStatus(data))
                 .catch(err => {
-                    showToast('Ошибка проверки проекта: ' + err.message, 'error');
+                    showToast(i18n.t('toast_check_project_error') + ': ' + i18n.tf(err.message), 'error');
                     resetStatusIcons();
                 });
         }
@@ -168,25 +168,25 @@
                         checkProject();
                     }
                 })
-                .catch(() => showToast('Не удалось выбрать папку', 'error'));
+                .catch(() => showToast(i18n.t('toast_select_folder_failed'), 'error'));
         });
 
         openFolderBtn.addEventListener('click', () => {
             const folder = folderInput.value.trim();
             if (!folder) {
-                showToast('Сначала укажите папку с билдом', 'warning');
+                showToast(i18n.t('toast_specify_folder_first'), 'warning');
                 return;
             }
             fetch('/api/open-folder/' + encodeURIComponent(folder), { method: 'GET' })
                 .then(res => res.json())
                 .then(data => {
                     if (data.ok) {
-                        showToast('Папка открыта в проводнике', 'success');
+                        showToast(i18n.t('toast_folder_opened'), 'success');
                     } else {
-                        showToast(data.error || 'Не удалось открыть папку', 'error');
+                        showToast(i18n.tf(data.error) || i18n.t('toast_open_folder_failed'), 'error');
                     }
                 })
-                .catch(() => showToast('Ошибка запроса к серверу', 'error'));
+                .catch(() => showToast(i18n.t('toast_server_error'), 'error'));
         });
 
         selectHtmlBtn.addEventListener('click', () => {
@@ -203,7 +203,7 @@
                         checkProject();
                     }
                 })
-                .catch(() => showToast('Не удалось выбрать HTML-файл', 'error'));
+                .catch(() => showToast(i18n.t('toast_select_html_failed'), 'error'));
         });
 
         folderInput.addEventListener('input', () => { saveAllSettings(); checkProject(); });
@@ -377,7 +377,7 @@
         function loadPlatforms() {
             fetch('/api/platforms')
                 .then(res => {
-                    if (!res.ok) throw new Error('Ошибка загрузки платформ');
+                    if (!res.ok) throw new Error(i18n.t('toast_platforms_load_error'));
                     return res.json();
                 })
                 .then(data => {
@@ -398,7 +398,7 @@
                 })
                 .catch(err => {
                     console.error('Ошибка загрузки платформ:', err);
-                    platformSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
+                    platformSelect.innerHTML = '<option value="">' + i18n.t('platforms_load_failed') + '</option>';
                 });
         }
 
@@ -414,11 +414,11 @@
             const folder = folderInput.value.trim();
             const htmlName = htmlInput.value.trim() || 'index';
             if (!folder) {
-                showToast('Выберите папку с билдом', 'warning');
+                showToast(i18n.t('toast_choose_folder'), 'warning');
                 return;
             }
 
-                                                const btnSpinner = document.getElementById('compressSpinner');
+            const btnSpinner = document.getElementById('compressSpinner');
             const btnLabel = document.getElementById('compressBtnLabel');
             const compressionType = compressionSelect.value;
             const typeSettings = settings[compressionType] || { createBackup: true, wasmLevel: 9, pckLevel: 9 };
@@ -428,11 +428,11 @@
 
             const includeInArchive = excludeEnabled.checked;
             if (!includeInArchive) {
-                showToast('Упаковка в архив отключена', 'info');
+                showToast(i18n.t('toast_zip_disabled'), 'info');
                 return;
             }
 
-                                                showToast('Сжатие начато', 'info');
+            showToast(i18n.t('toast_compress_started'), 'info');
             const platform = platformSelect.value;
             
             
@@ -446,7 +446,7 @@
             // 1. Сжатие – добавляем параметры сжатия
             stages.push({
                 name: 'compress',
-                label: 'Сжатие файлов',
+                label: i18n.t('stage_compress'),
                 url: '/compress/compress',
                 payload: {
                     ...basePayload,
@@ -461,7 +461,7 @@
             if (platform && platform !== 'None') {
                 stages.push({
                     name: 'platform',
-                    label: 'Добавление SDK платформы',
+                    label: i18n.t('stage_platform'),
                     url: '/compress/platform',
                     payload: {
                         ...basePayload,
@@ -473,7 +473,7 @@
             // 3. Упаковка в ZIP – добавляем exclude_extensions (только здесь)
             stages.push({
                 name: 'zippack',
-                label: 'Упаковка в ZIP',
+                label: i18n.t('stage_zippack'),
                 url: '/compress/zippack',
                 payload: {
                     ...basePayload,
@@ -482,12 +482,12 @@
             });
 
             // Блокируем кнопку и сбрасываем прогресс
-                                                startBtn.disabled = true;
+            startBtn.disabled = true;
             if (btnSpinner) btnSpinner.style.display = 'inline-block';
-            if (btnLabel) btnLabel.textContent = 'Выполнение...';
+            if (btnLabel) btnLabel.textContent = i18n.t('compress_running');
             progressFill.style.width = '0%';
             progressText.textContent = '0%';
-            progressStatus.textContent = 'Подготовка...';
+            progressStatus.textContent = i18n.t('compress_preparing');
 
             let success = true;
             let currentStage = 0;
@@ -509,33 +509,34 @@
 
                     if (!response.ok) {
                         const errData = await response.json().catch(() => ({}));
-                        throw new Error(errData.detail || errData.message || `Ошибка на этапе ${stage.label}`);
+                        throw new Error(errData.detail || errData.message || `${i18n.t('stage_error_prefix')} ${stage.label}`);
                     }
 
                     const data = await response.json();
                     if (!data.success) {
-                        throw new Error(data.message || `Ошибка на этапе ${stage.label}`);
+                        throw new Error(data.message || `${i18n.t('stage_error_prefix')} ${stage.label}`);
                     }
 
-                    showToast(`${stage.label}: ${data.message || 'выполнено'}`, 'success');
+                    const doneMsg = i18n.tf(data.message) || i18n.t('stage_done');
+                    showToast(`${stage.label}: ${data.message_extra ? doneMsg + ' ' + data.message_extra : doneMsg}`, 'success');
 
                     const newPercent = Math.round(currentStage / totalStages * 100);
                     progressFill.style.width = newPercent + '%';
                     progressText.textContent = newPercent + '%';
                 }
 
-                progressStatus.textContent = 'Все этапы завершены успешно!';
+                progressStatus.textContent = i18n.t('compress_all_done');
                 progressFill.style.width = '100%';
                 progressText.textContent = '100%';
 
             } catch (error) {
                 success = false;
-                progressStatus.textContent = `Ошибка: ${error.message}`;
-                showToast(`Ошибка на этапе ${currentStage}: ${error.message}`, 'error');
+                progressStatus.textContent = `${i18n.t('error_prefix')}: ${i18n.tf(error.message)}`;
+                showToast(`${i18n.t('stage_error_prefix')} ${currentStage}: ${i18n.tf(error.message)}`, 'error');
             } finally {
-                                                                startBtn.disabled = false;
+                startBtn.disabled = false;
                 if (btnSpinner) btnSpinner.style.display = 'none';
-                if (btnLabel) btnLabel.textContent = 'Сжать';
+                if (btnLabel) btnLabel.textContent = i18n.t('compress_start');
             }
         });
 

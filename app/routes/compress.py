@@ -26,10 +26,14 @@ class CompressRouter(BaseRouter):
                     wasm_compress_level=request.wasm_level,
                     create_backups=request.create_backup,
                 )
-                return {"success": result, "message": f"Сжатие выполнено <br>{wasm_msg} <br>{pck_msg}" if result else "Ошибка сжатия"}
-            
+                return {
+                    "success": result,
+                    "message": "api_compress_done" if result else "api_compress_error",
+                    "message_extra": f"{wasm_msg} {pck_msg}" if result else ""
+                }
+
             except Exception as e:
-                return {"success": False, "message": f"Ошибка {e}"}
+                return {"success": False, "message": "api_error", "message_extra": str(e)}
 
              
 
@@ -38,7 +42,7 @@ class CompressRouter(BaseRouter):
             
             time.sleep(1)
             # логика интеграции SDK для указанной платформы (request.platform)
-            return {"success": True, "message": f"{request.platform} SDK добавлено"}
+            return {"success": True, "message": "api_sdk_added", "message_extra": request.platform}
 
         @self.post("/zippack")
         async def zippack(request: ZippackRequest):
@@ -48,7 +52,7 @@ class CompressRouter(BaseRouter):
             except Exception as e:
                 return {"success": False, "message": f"{e}"}
             else:
-                return {"success": True, "message": "Упаковано в ZIP"}
+                return {"success": True, "message": "api_zipped"}
 
     def _select_compressor(self, compression_type: str) -> Compressor:
         match compression_type:

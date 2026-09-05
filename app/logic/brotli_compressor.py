@@ -38,8 +38,18 @@ class BrotliCompressor(Compressor):
 
     @classmethod
     def _is_compressed(cls, filepath: str) -> bool:
-        """У Brotli нет сигнатуры, поэтому всегда пережимаем."""
-        return False
+        """Проверяем сигнатуры: gzip-магия или успешная brotli-распаковка."""
+        with open(filepath, 'rb') as f:
+            data = f.read()
+
+        if data[:2] == b'\x1f\x8b':
+            return True
+
+        try:
+            brotli.decompress(data)
+            return True
+        except brotli.error:
+            return False
 
     @classmethod
     def _add_decoder_in_folder(cls, folder: str) -> bool:

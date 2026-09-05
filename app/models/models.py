@@ -5,7 +5,10 @@ class CheckProjectRequest(BaseModel):
     folder: str
     html_name: str = "index"
 
-# ---------- Базовая модель с общими полями ----------
+class Translation(BaseModel):
+    lang: str = "en"
+
+# ---------- Базовая модель с общими полями для сжатия----------
 class BaseCompressRequest(BaseModel):
     """Общие поля для всех этапов сжатия"""
     folder: str

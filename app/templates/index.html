@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ _("app_title") }}</title>
-    <!-- Общий CSS -->
+        <!-- Общий CSS -->
     <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/pages/compress.css">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Фавикон -->
@@ -20,7 +21,7 @@
                     <img src="/static/icons/logo.svg" alt="Godot PCK Compressor" class="logo-icon">
                     <span class="logo-title">{{ _("app_title") }}</span>
                 </div>
-                <button id="toggleSidebarBtn" class="toggle-btn">
+                                <button id="toggleSidebarBtn" class="toggle-btn">
                     <i id="toggleIcon" class="fas fa-chevron-left"></i>
                 </button>
             </div>
@@ -28,18 +29,18 @@
                 <!--<li class="menu-item active" data-page="home">
                     <i class="fas fa-home"></i>
                     <span>{{ _("menu_home") }}</span>
-                </li>
-                <li class="menu-item" data-page="settings">
-                    <i class="fas fa-cog"></i>
-                    <span>{{ _("menu_settings") }}</span>
                 </li> -->
                 <li class="menu-item" data-page="compress">
                     <i class="fas fa-file-archive"></i>
-                    <span>{{ _("menu_compress") }}</span>
+                    <span data-i18n="menu_compress">{{ _("menu_compress") }}</span>
                 </li>
+                <li class="menu-item" data-page="settings">
+                    <i class="fas fa-cog"></i>
+                    <span data-i18n="menu_settings">{{ _("menu_settings") }}</span>
+                </li> 
                 <li class="menu-item" data-page="about">
                     <i class="fas fa-info-circle"></i>
-                    <span>{{ _("menu_about") }}</span>
+                    <span data-i18n="menu_about">{{ _("menu_about") }}</span>
                 </li>
             </ul>
         </nav>
@@ -63,10 +64,11 @@
     </div>
 
     <!-- Общий JavaScript -->
+    <script src="/static/js/i18n.js"></script>
     <script src="/static/js/persist.js"></script>
     <script src="/static/js/main.js"></script>
     <script src="/static/js/toast.js"></script>
-    <!-- Специфичные скрипты для каждой страницы (загружаются сразу) -->
+    <!-- Специфичные скрипты для каждой страницы -->
     <script src="/static/js/pages/compress.js"></script>
 </body>
 </html>

@@ -445,10 +445,14 @@ input[type="checkbox"] {
         font-size: 28px;
     }
     .logo-title {
-        font-size: 18px;
-        white-space: nowrap;
-        color: var(--accent);
+        display: none;
     }
+
+    .logo-icon {
+        width: 32px;         
+        height: 32px;
+    }
+
     .menu {
         display: flex;
         gap: 10px;

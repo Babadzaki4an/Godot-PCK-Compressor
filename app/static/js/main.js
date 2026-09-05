@@ -39,4 +39,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Инициализация home по умолчанию
     if (window.initHome) window.initHome();
+
+    // Переключатель языков (в шапке и на странице настроек)
+    const langSelects = document.querySelectorAll('#langSelect, #settingsLangSelect');
+    if (langSelects.length > 0) {
+        // Устанавливаем текущий язык из localStorage или по умолчанию
+        const savedLang = localStorage.getItem('app:language') || 'ru';
+        langSelects.forEach(sel => { sel.value = savedLang; });
+
+        langSelects.forEach(function (langSelect) {
+            langSelect.addEventListener('change', async function () {
+                const lang = this.value;
+                if (window.i18n) {
+                    const success = await window.i18n.switchLanguage(lang);
+                    if (success) {
+                        // Синхронизируем все переключатели языка
+                        langSelects.forEach(sel => { sel.value = lang; });
+                    }
+                }
+            });
+        });
+    }
 });

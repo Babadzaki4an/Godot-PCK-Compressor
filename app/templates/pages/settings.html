@@ -1,16 +1,9 @@
 <h1>{{ _("settings_title") }}</h1>
 <div class="settings-group">
-    <label for="langSelect">{{ _("settings_language") }}</label>
-    <select id="langSelect">
-        <option value="ru" selected>Русский</option>
-        <option value="en">English (soon)</option>
-    </select>
-</div>
-<div class="settings-group">
-    <label for="compressionLevel">{{ _("settings_compression_level") }}</label>
-    <select id="compressionLevel">
-        <option value="1">1 (Низкий)</option>
-        <option value="6" selected>6 (Средний)</option>
-        <option value="9">9 (Высокий)</option>
+    <label for="settingsLangSelect" data-i18n="settings_language">{{ _("settings_language") }}</label>
+    <select id="settingsLangSelect" class="lang-select">
+        {% for code, name in langs %}
+        <option value="{{ code }}">{{ name }}</option>
+        {% endfor %}
     </select>
 </div>
