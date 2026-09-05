@@ -72,5 +72,7 @@
   "api_sdk_added": "SDK added",
   "api_zipped": "Zipped into ZIP",
   "api_path_not_passed": "Path not provided",
-  "api_path_not_exist": "Path does not exist"
+  "api_path_not_exist": "Path does not exist",
+  "about_license": "License",
+  "about_license_name": "GPLv3 (GNU General Public License v3)"
 }

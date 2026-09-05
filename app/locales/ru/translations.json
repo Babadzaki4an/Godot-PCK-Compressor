@@ -72,5 +72,7 @@
   "api_sdk_added": "SDK добавлено",
   "api_zipped": "Упаковано в ZIP",
   "api_path_not_passed": "Путь не передан",
-  "api_path_not_exist": "Путь не существует"
+  "api_path_not_exist": "Путь не существует",
+  "about_license": "Лицензия",
+  "about_license_name": "GPLv3 (GNU General Public License v3)"
 }

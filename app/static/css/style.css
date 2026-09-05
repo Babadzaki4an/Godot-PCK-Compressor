@@ -417,24 +417,22 @@ a:hover {
     align-items: center;
     gap: 8px;
     font-size: 14px;
-    max-width: 100%;        /* не выходит за пределы родителя */
-    overflow: hidden;       /* скрываем переполнение */
-    text-overflow: ellipsis;/* добавляем многоточие, если текст слишком длинный */
-    white-space: nowrap;    /* текст в одну строку с обрезанием */
-    word-break: break-word; /* запасной вариант переноса, но неактивен из-за nowrap */
+    max-width: 100%;    
+    overflow: hidden; 
+    text-overflow: ellipsis;
+    white-space: nowrap; 
+    word-break: break-word;
 }
-/* Если хотите именно перенос строк вместо обрезания, закомментируйте выше и раскомментируйте ниже: */
-/*
-.status-item {
-    white-space: normal;
-    text-overflow: clip;
-    overflow: visible; 
+.text-body {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-left: 12px;
+    line-height: 1.5;
 }
-*/
 
 .status-item i {
     font-size: 14px;
-    flex-shrink: 0; /* иконки не сжимаются */
+    flex-shrink: 0;
 }
 .status-item .fa-circle {
     color: var(--status-neutral);
@@ -450,7 +448,7 @@ a:hover {
     margin-top: 8px;
     font-size: 14px;
     color: var(--text-secondary);
-    word-break: break-word; /* для длинных сообщений */
+    word-break: break-word; 
 }
 
 input[type="checkbox"] {
@@ -459,8 +457,6 @@ input[type="checkbox"] {
     cursor: pointer;
 }
 
-
-/* ---------- Адаптив для мобильных ---------- */
 @media (max-width: 768px) {
     .app-container {
         flex-direction: column;
