@@ -29,7 +29,7 @@ class ApiRouter(BaseRouter):
         @self.post("/check-project")
         async def check_project(request: CheckProjectRequest):
             folder = request.folder
-            html_name = request.html_name
+            html_name = request.file
             if not folder or not os.path.isdir(folder):
                 raise HTTPException(status_code=400, detail="api_folder_not_exist")
 
@@ -64,6 +64,16 @@ class ApiRouter(BaseRouter):
         async def get_default_extensions():
             return {
                 "platforms": ResourceManager.get_plarform_names()
+            }
+
+        @self.get("/build-params")
+        async def get_build_params():
+            params = ResourceManager.get_build_params()
+            return {
+                "params": [
+                    {"name": p.name, "values": p.values, "description": p.description}
+                    for p in params
+                ]
             }
 
         @self.get("/open-folder/{path:path}")

@@ -190,7 +190,6 @@
     cursor: pointer;
 }
 
-/* Кнопки определены глобально в style.css (.button, .primary-button, .second-button, .danger-button) */
 
 /* Подсказка внутри сворачиваемых блоков */
 .hint-text {

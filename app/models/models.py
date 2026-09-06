@@ -1,10 +1,10 @@
-from typing import List
+from typing import Dict, List
 from pydantic import BaseModel
 
 
 class CheckProjectRequest(BaseModel):
     folder: str
-    html_name: str = "index"
+    file: str = "index"
 
 class Translation(BaseModel):
     lang: str = "en"
@@ -33,3 +33,9 @@ class PlatformRequest(BaseCompressRequest):
 class ZippackRequest(BaseCompressRequest):
     """Упаковка в ZIP (без дополнительных параметров)"""
     exclude_extensions: List[str] = []
+
+# ---------- Модель для эндпоинта /build ----------
+
+class CustomPyCreate(BaseCompressRequest):
+    """Параметры для создания custom.py файла"""
+    params: Dict[str, str] = {}

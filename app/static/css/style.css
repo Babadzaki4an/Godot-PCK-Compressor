@@ -483,14 +483,17 @@ a:hover {
     gap: 8px;
 }
 
-.settings-group .field-row .folder-selector .text-input {
-    width: 100%;
+.text-input {
     padding: 8px 12px;
     font-size: 14px;
     border: 1px solid var(--input-border, #555);
     border-radius: 4px;
     background: var(--input-bg, #3d3f4b);
     color: var(--text-primary, #f8f8f2);
+}
+
+.settings-group .field-row .folder-selector .text-input {
+    width: 100%;
 }
 
 .settings-group .field-row .button {

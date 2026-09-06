@@ -9,8 +9,11 @@ class ResourceManager():
     BROTLI_JS_CHANGES_NAME: str = "brotli_js_changes.json"
     BROTLI_DECODER_NAME: str = "brotli_inflate.min.js"
 
+    BUILD_CUSTOM_PY_NAME: str = "custom_py.json"
+
     FILES_DIR: Path = Path(__file__).parent / "files"
     PLATFORM_DIR: Path = FILES_DIR / "platforms"
+    BUILD_DIR: Path = FILES_DIR / "build"
 
     plarform_names: list[str] = []
 
@@ -79,3 +82,10 @@ class ResourceManager():
 
     @classmethod
     def get_platform_sdk_data(cls, platform_name: str) -> PlatformSDKData | None:        return cls._get_resource(f"{platform_name}.json", PlatformSDKData, cls.PLATFORM_DIR)
+
+    @classmethod
+    def get_build_params(cls) -> list[CustomPyComponent]:
+        params = cls._get_resource(cls.BUILD_CUSTOM_PY_NAME, CustomPyComponent, cls.BUILD_DIR) or []
+        val_set = set(["no", "yes"])
+        params.sort(key=lambda p: (p.group, p.subgroup or "", set(p.values) == val_set, p.name))
+        return params

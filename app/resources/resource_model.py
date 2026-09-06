@@ -1,14 +1,24 @@
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import List
 
 class FromDictMixin:
     @classmethod
     def from_dict(cls, data: dict) -> 'FromDictMixin':
-        instance = cls.__new__(cls)
-        for key, value in data.items():
-            setattr(instance, key, value)
+        return cls(**data)
 
-        return instance
+@dataclass
+class CustomPyComponent(FromDictMixin):
+    name: str
+    description: str
+    group: str = "features"
+    subgroup: str = ""
+    values: List[str] = field(default_factory=lambda: ['no', 'yes'])
+
+@dataclass
+class CustomPy(FromDictMixin):
+    filename: str
+    params_list: List[CustomPyComponent] = field(default_factory=list)
 
 @dataclass
 class ChangeResource(FromDictMixin):

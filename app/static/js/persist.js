@@ -1,40 +1,41 @@
-// compress.js – только сохранение и восстановление
+// persist.js – сохранение и восстановление полей
 (function() {
     'use strict';
 
-    // Элементы
-    const folderInput = document.getElementById('folderPath');
-    const htmlInput = document.getElementById('htmlFileName');
-
-    if (!folderInput || !htmlInput) {
-        console.warn('❌ Поля не найдены');
-        return;
-    }
+    // Список всех полей для сохранения: [id, key в localStorage]
+    const fields = [
+        ['folderPath', 'app:folderPath'],
+        ['htmlFileName', 'app:htmlFileName'],
+        ['engineSrcPath', 'app:engineSrcPath'],
+        ['emsdkPath', 'app:emsdkPath'],
+        ['wasmOptPath', 'app:wasmOptPath'],
+        ['customBuildScript', 'app:customBuildScript'],
+        ['gdbuildProfilesPath', 'app:gdbuildProfilesPath'],
+    ];
 
     // --- Восстановление из localStorage ---
-    const savedFolder = localStorage.getItem('app:folderPath');
-    const savedHtml = localStorage.getItem('app:htmlFileName');
-    if (savedFolder !== null) {
-        folderInput.value = savedFolder;
-        console.log('✅ Восстановлено folderPath:', savedFolder);
-    }
-    if (savedHtml !== null) {
-        htmlInput.value = savedHtml;
-        console.log('✅ Восстановлено htmlFileName:', savedHtml);
-    }
+    fields.forEach(function ([id, key]) {
+        const input = document.getElementById(id);
+        if (!input) return;
+        const saved = localStorage.getItem(key);
+        if (saved !== null) {
+            input.value = saved;
+        }
+        // --- Сохранение при изменении ---
+        input.addEventListener('input', function () {
+            localStorage.setItem(key, input.value);
+        });
+        input.addEventListener('blur', function () {
+            localStorage.setItem(key, input.value);
+        });
+    });
 
-    // --- Сохранение ---
-    function saveAll() {
-        localStorage.setItem('app:folderPath', folderInput.value);
-        localStorage.setItem('app:htmlFileName', htmlInput.value);
+    // Сохранение выбранного языка
+    const langSelects = document.querySelectorAll('.lang-select');
+    const savedLang = localStorage.getItem('app:language');
+    if (savedLang) {
+        langSelects.forEach(function (sel) {
+            sel.value = savedLang;
+        });
     }
-
-    // --- Привязка событий ---
-    folderInput.addEventListener('input', saveAll);
-    htmlInput.addEventListener('input', saveAll);
-    // Сохраняем также при потере фокуса (на случай, если пользователь ввёл и сразу закрыл страницу)
-    folderInput.addEventListener('blur', saveAll);
-    htmlInput.addEventListener('blur', saveAll);
-
-    console.log('✅ Сохранение/восстановление настроено');
 })();

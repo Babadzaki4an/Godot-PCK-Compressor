@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const menuItems = document.querySelectorAll('.menu-item');
     const pages = {
         compress: document.getElementById('page-compress'),
+        build: document.getElementById('page-build'),
         settings: document.getElementById('page-settings'),
         about: document.getElementById('page-about')
     };

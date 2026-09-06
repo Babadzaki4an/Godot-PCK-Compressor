@@ -34,6 +34,10 @@
                     <i class="fas fa-file-archive"></i>
                     <span data-i18n="menu_compress">{{ _("menu_compress") }}</span>
                 </li>
+                <li class="menu-item" data-page="build">
+                    <i class="fas fa-hammer"></i>
+                    <span data-i18n="menu_build">{{ _("menu_build") }}</span>
+                </li>
                 <li class="menu-item" data-page="settings">
                     <i class="fas fa-cog"></i>
                     <span data-i18n="menu_settings">{{ _("menu_settings") }}</span>
@@ -51,6 +55,9 @@
             <div id="page-compress" class="page active">
                 {% include "pages/compress.html" %}
             </div>
+            <div id="page-build" class="page">
+                {% include "pages/build.html" %}
+            </div>
             <div id="page-settings" class="page">
                 {% include "pages/settings.html" %}
             </div>
@@ -67,5 +74,6 @@
     <script src="/static/js/toast.js"></script>
     <!-- Специфичные скрипты для каждой страницы -->
     <script src="/static/js/pages/compress.js"></script>
+    <script src="/static/js/pages/build.js"></script>
 </body>
 </html>

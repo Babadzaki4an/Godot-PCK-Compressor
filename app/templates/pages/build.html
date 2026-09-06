@@ -1,0 +1,109 @@
+<link rel="stylesheet" href="/static/css/pages/build.css">
+<h1 data-i18n="build_title">{{ _("build_title") }}</h1>
+
+<!-- Переключатель табов -->
+<div class="build-tabs">
+    <button id="tabEngineBtn" class="build-tab active" data-tab="engine" data-i18n="build_tab_engine">{{ _("build_tab_engine") }}</button>
+    <button id="tabGenerateBtn" class="build-tab" data-tab="generate" data-i18n="build_tab_generate">{{ _("build_tab_generate") }}</button>
+</div>
+
+<!-- Таб: Сборка движка -->
+<div id="tab-engine" class="build-tab-content active">
+    <p class="text-body" data-i18n="build_engine_wip">{{ _("build_engine_wip") }}</p>
+</div>
+
+<!-- Таб: Генерация custom.py -->
+<div id="tab-generate" class="build-tab-content">
+    <div class="form-group file-selector-row">
+        <div class="file-input-group">
+            <label for="customPyName" data-i18n="build_filename_label">{{ _("build_filename_label") }}</label>
+            <input type="text" id="customPyName" value="custom.py" class="text-input">
+        </div>
+        <div class="file-dropdown-group">
+            <label for="existingFiles" data-i18n="build_existing_files_label">{{ _("build_existing_files_label") }}</label>
+            <select id="existingFiles" class="text-input">
+                <option value="" data-i18n="build_no_files">{{ _("build_no_files") }}</option>
+            </select>
+        </div>
+        <button id="refreshFilesBtn" class="button second-button" title="Обновить список">
+            <i class="fas fa-sync-alt"></i>
+        </button>
+        <!-- НОВАЯ КНОПКА УДАЛЕНИЯ -->
+        <button id="deleteFileBtn" class="button danger-button" title="Удалить выбранный файл" style="display: none;">
+            <i class="fas fa-trash-alt"></i>
+        </button>
+    </div>
+
+    <!-- Подвкладки групп параметров -->
+    <div class="group-tabs">
+        {% for group in build_params | map(attribute="group") | unique | sort %}
+        <button class="group-tab" data-group="{{ group }}" data-i18n="group_{{ group }}">{{ _("group_" + group) }}</button>
+        {% endfor %}
+    </div>
+
+    {% for group in build_params | map(attribute="group") | unique | sort %}
+    <div class="group-content" data-group="{{ group }}">
+        <!-- Подвкладки подгрупп (только для modules) -->
+        {% if group == "modules" %}
+        <div class="subgroup-tabs">
+            {% for sg in build_params | selectattr("group", "equalto", group) | map(attribute="subgroup") | unique | sort %}
+            <button class="subgroup-tab" data-subgroup="{{ sg }}" data-i18n="subgroup_{{ sg }}">{{ _("subgroup_" + sg) }}</button>
+            {% endfor %}
+        </div>
+        {% for sg in build_params | selectattr("group", "equalto", group) | map(attribute="subgroup") | unique | sort %}
+        <div class="subgroup-content" data-subgroup="{{ sg }}">
+            <div class="build-params-list">
+                {% for p in build_params | selectattr("group", "equalto", group) | selectattr("subgroup", "equalto", sg) %}
+                <div class="build-param">
+                    <div class="param-info">
+                        <span class="param-name">{{ p.name }}</span>
+                        <label data-i18n="{{ p.description }}" class="param-desc">{{ _(p.description) }}</label>
+                    </div>
+                    {% if p.values | length == 1 and p.values[0] == "path" %}
+                    <input type="text" class="text-input build-param-input" data-param-name="{{ p.name }}">
+                    {% elif p.values | length == 2 and p.values | sort | list == ["no", "yes"] %}
+                    <input type="checkbox" class="build-param-checkbox" data-param-name="{{ p.name }}" value="yes">
+                    {% else %}
+                    <select class="text-input build-param-input" data-param-name="{{ p.name }}">
+                        {% for v in p.values %}
+                        <option value="{{ v }}">{{ v }}</option>
+                        {% endfor %}
+                    </select>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="build-params-list">
+            {% for p in build_params | selectattr("group", "equalto", group) %}
+            <div class="build-param">
+                <div class="param-info">
+                    <span class="param-name">{{ p.name }}</span>
+                    <label data-i18n="{{ p.description }}" class="param-desc">{{ _(p.description) }}</label>
+                </div>
+                {% if p.values | length == 1 and p.values[0] == "path" %}
+                <input type="text" class="text-input build-param-input" data-param-name="{{ p.name }}">
+                {% elif p.values | length == 2 and p.values | sort | list == ["no", "yes"] %}
+                <input type="checkbox" class="build-param-checkbox" data-param-name="{{ p.name }}" value="yes">
+                {% else %}
+                <select class="text-input build-param-input" data-param-name="{{ p.name }}">
+                    {% for v in p.values %}
+                    <option value="{{ v }}">{{ v }}</option>
+                    {% endfor %}
+                </select>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    <div class="form-group">
+        <button id="generateBtn" class="button primary-button">
+            <i class="fas fa-file-code"></i> <span data-i18n="build_generate_btn">{{ _("build_generate_btn") }}</span>
+        </button>
+    </div>
+</div>
