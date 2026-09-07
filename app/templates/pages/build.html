@@ -3,17 +3,17 @@
 
 <!-- Переключатель табов -->
 <div class="build-tabs">
-    <button id="tabEngineBtn" class="build-tab active" data-tab="engine" data-i18n="build_tab_engine">{{ _("build_tab_engine") }}</button>
-    <button id="tabGenerateBtn" class="build-tab" data-tab="generate" data-i18n="build_tab_generate">{{ _("build_tab_generate") }}</button>
+    <button id="tabEngineBtn" class="build-tab" data-tab="engine" data-i18n="build_tab_engine">{{ _("build_tab_engine") }}</button>
+    <button id="tabGenerateBtn" class="build-tab active" data-tab="generate" data-i18n="build_tab_generate">{{ _("build_tab_generate") }}</button>
 </div>
 
 <!-- Таб: Сборка движка -->
-<div id="tab-engine" class="build-tab-content active">
+<div id="tab-engine" class="build-tab-content" data-tab="engine">
     <p class="text-body" data-i18n="build_engine_wip">{{ _("build_engine_wip") }}</p>
 </div>
 
 <!-- Таб: Генерация custom.py -->
-<div id="tab-generate" class="build-tab-content">
+<div id="tab-generate" class="build-tab-content active" data-tab="generate">
     <div class="form-group file-selector-row">
         <div class="file-input-group">
             <label for="customPyName" data-i18n="build_filename_label">{{ _("build_filename_label") }}</label>
@@ -31,6 +31,13 @@
         <!-- НОВАЯ КНОПКА УДАЛЕНИЯ -->
         <button id="deleteFileBtn" class="button danger-button" title="Удалить выбранный файл" style="display: none;">
             <i class="fas fa-trash-alt"></i>
+        </button>
+    </div>
+
+    <!-- Кнопка генерации наверху -->
+    <div class="form-group">
+        <button id="generateBtn" class="button primary-button">
+            <i class="fas fa-file-code"></i> <span data-i18n="build_generate_btn">{{ _("build_generate_btn") }}</span>
         </button>
     </div>
 
@@ -100,10 +107,4 @@
         {% endif %}
     </div>
     {% endfor %}
-
-    <div class="form-group">
-        <button id="generateBtn" class="button primary-button">
-            <i class="fas fa-file-code"></i> <span data-i18n="build_generate_btn">{{ _("build_generate_btn") }}</span>
-        </button>
-    </div>
 </div>

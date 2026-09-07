@@ -1,0 +1,18 @@
+<div id="zstd-settings" class="tab-settings">
+    <h3>ZStandard</h3>
+    <div class="form-group">
+        <label>
+            <input type="checkbox" id="zstd-createBackup" checked> <span data-i18n="gzip_create_backups">Создавать бэкапы (.backup) перед изменениями</span>
+        </label>
+    </div>
+    <div class="form-group field-row">
+        <div>
+            <label for="zstd-wasmLevel" data-i18n="zstd_wasm_level">Сжатие WASM (1-22):</label>
+            <input type="number" id="zstd-wasmLevel" class="text-input input-compact" min="1" max="22" value="19">
+        </div>
+        <div>
+            <label for="zstd-pckLevel" data-i18n="zstd_pck_level">Сжатие PCK (1-22):</label>
+            <input type="number" id="zstd-pckLevel" class="text-input input-compact" min="1" max="22" value="19">
+        </div>
+    </div>
+</div>

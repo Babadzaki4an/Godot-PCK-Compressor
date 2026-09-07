@@ -2,27 +2,13 @@
 (function() {
     'use strict';
 
-    // Создаём контейнер для тостов (один раз)
     let container = document.getElementById('toast-container');
     if (!container) {
         container = document.createElement('div');
         container.id = 'toast-container';
-        container.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            max-width: 400px;
-            width: 100%;
-            pointer-events: none;
-        `;
         document.body.appendChild(container);
     }
 
-    // Генерация приятного звука (Web Audio)
     let _audioCtx = null;
     function playToastSound() {
         try {
@@ -47,18 +33,15 @@
             osc.start(now);
             osc.stop(now + 0.2);
 
-            // Автоочистка
             setTimeout(() => {
                 try { osc.disconnect(); gain.disconnect(); } catch (e) {}
             }, 300);
         } catch (e) { /* тихо */ }
     }
 
-    // Создание одного тоста
     function showToast(message, type = 'info', duration = 3000) {
         if (!message) return;
 
-        // Играем звук
         playToastSound();
 
         const toast = document.createElement('div');
@@ -71,14 +54,13 @@
             box-shadow: 0 8px 24px var(--shadow);
             border-left: 5px solid;
             pointer-events: auto;
-            animation: slideIn 0.3s ease forwards;
+            animation: toastSlideIn 0.3s ease forwards;
             font-family: 'Segoe UI', sans-serif;
             font-size: 15px;
             line-height: 1.4;
             word-break: break-word;
         `;
 
-        // Цвета для разных типов (из CSS-переменных темы)
         const colors = {
             info: 'var(--accent)',
             success: 'var(--success)',
@@ -87,7 +69,6 @@
         };
         toast.style.borderLeftColor = colors[type] || colors.info;
 
-        // Иконка (Font Awesome)
         const iconMap = {
             info: 'fa-info-circle',
             success: 'fa-check-circle',
@@ -99,29 +80,13 @@
 
         container.appendChild(toast);
 
-        // Удаление через duration
         setTimeout(() => {
-            toast.style.animation = 'slideOut 0.3s ease forwards';
+            toast.style.animation = 'toastSlideOut 0.3s ease forwards';
             setTimeout(() => {
                 if (toast.parentNode) toast.remove();
             }, 300);
         }, duration);
     }
 
-    // Добавляем анимации в head (если ещё нет)
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOut {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
-    `;
-    document.head.appendChild(style);
-
-    // Глобальный доступ
     window.showToast = showToast;
 })();

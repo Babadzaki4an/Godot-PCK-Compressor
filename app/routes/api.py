@@ -19,11 +19,13 @@ class ApiRouter(BaseRouter):
             return {"path": folder_path or ""}
 
         @self.get("/select-file")
-        async def select_file():
-            file_path = DialogHelper.select_file(
-                title="Выберите файл",
-                filetypes=[("HTML файлы", "*.html"), ("Все файлы", "*.*")]
-            )
+        async def select_file(filter: str = "*.*"):
+            filetypes = [("All files", "*.*")]
+            if filter == "exe":
+                filetypes = [("Executable", "*.exe"), ("All files", "*.*")]
+            elif filter == "html":
+                filetypes = [("HTML files", "*.html"), ("All files", "*.*")]
+            file_path = DialogHelper.select_file(title="Выберите файл", filetypes=filetypes)
             return {"path": file_path or ""}
 
         @self.post("/check-project")

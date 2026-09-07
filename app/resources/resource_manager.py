@@ -9,6 +9,9 @@ class ResourceManager():
     BROTLI_JS_CHANGES_NAME: str = "brotli_js_changes.json"
     BROTLI_DECODER_NAME: str = "brotli_inflate.min.js"
 
+    ZSTD_JS_CHANGES_NAME: str = "zstd_js_changes.json"
+    ZSTD_DECODER_NAME: str = "zstd_inflate.min.js"
+
     BUILD_CUSTOM_PY_NAME: str = "custom_py.json"
 
     FILES_DIR: Path = Path(__file__).parent / "files"
@@ -50,6 +53,18 @@ class ResourceManager():
     @classmethod
     def get_brotli_decoder_name(cls) -> str:
         return cls.BROTLI_DECODER_NAME
+
+    @classmethod
+    def get_zstd_js_changes(cls) -> list[ChangeResource]:
+        return cls._get_resource(cls.ZSTD_JS_CHANGES_NAME, ChangeResource)
+
+    @classmethod
+    def get_zstd_decoder_name(cls) -> str:
+        return cls.ZSTD_DECODER_NAME
+
+    @classmethod
+    def get_zstd_decoder_path(cls) -> str:
+        return str(cls.FILES_DIR / cls.get_zstd_decoder_name())
 
     @classmethod
     def get_pako_name(cls) -> str:

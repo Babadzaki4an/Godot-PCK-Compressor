@@ -7,7 +7,7 @@ from app.models import PlatformRequest, CompressRequest, ZippackRequest
 import os
 from fastapi import HTTPException
 
-from app.logic import ZipPacker, Compressor, GzipCompressor, BrotliCompressor, NoCompressor, PlatformSdkInjector
+from app.logic import ZipPacker, Compressor, GzipCompressor, BrotliCompressor, ZstdCompressor, NoCompressor, PlatformSdkInjector
 from app.resources import ResourceManager
 
 class CompressRouter(BaseRouter):
@@ -64,6 +64,9 @@ class CompressRouter(BaseRouter):
 
             case 'brotli':
                 return BrotliCompressor
+
+            case 'zstd':
+                return ZstdCompressor
 
             case 'none':
                 return NoCompressor

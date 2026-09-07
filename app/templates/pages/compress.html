@@ -47,6 +47,7 @@
                     <option value="none" data-i18n="compression_none">Без сжатия</option>
                     <option value="gzip">Gzip</option>
                     <option value="brotli">Brotli</option>
+                    <option value="zstd">ZStandard</option>
                 </select>
             </div>
             <button id="toggleCompressionBlock" class="toggle-btn">
@@ -59,6 +60,9 @@
             </div>
             <div id="brotli-settings" class="tab-settings" style="display: none;">
                 {% include "partials/brotli_settings.html" %}
+            </div>
+            <div id="zstd-settings" class="tab-settings" style="display: none;">
+                {% include "partials/zstd_settings.html" %}
             </div>
         </div>
     </div>

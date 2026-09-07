@@ -11,7 +11,6 @@ class App:
     """Главный класс приложения"""
 
     def __init__(self):
-        #TODO add tranlation
         self.fastapi = FastAPI(
             title="Godot PCK Compressor",
             version="1.0",

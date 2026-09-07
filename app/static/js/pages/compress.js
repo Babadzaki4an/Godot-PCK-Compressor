@@ -4,15 +4,15 @@
     if (window._compress_initialized) return;
     window._compress_initialized = true;
 
-    // ----------------------------- Единое хранилище настроек -----------------------------
     const STORAGE_KEY = 'app:settings';
+    const t = (key) => window.i18n?.t(key) || key;
+    const tf = (text) => window.i18n?.tf(text) || text;
 
     const defaultSettings = {
-        folderPath: '',
-        htmlFileName: 'index',
         compressionTab: 'gzip',
         gzip: { createBackup: true, wasmLevel: 9, pckLevel: 9 },
         brotli: { createBackup: true, wasmLevel: 11, pckLevel: 11 },
+        zstd: { createBackup: true, wasmLevel: 19, pckLevel: 19 },
         excludeEnabled: true,
         excludeCollapsed: false,
         compressionCollapsed: false,
@@ -85,9 +85,13 @@
             return;
         }
 
-        // Восстановление путей
-        folderInput.value = settings.folderPath || '';
-        htmlInput.value = settings.htmlFileName || 'index';
+        // Синхронизируем пути с persist.js (он восстановил их из localStorage)
+        const paths = {
+            folderPath: localStorage.getItem('app:folderPath') || '',
+            htmlFileName: localStorage.getItem('app:htmlFileName') || 'index'
+        };
+        folderInput.value = paths.folderPath;
+        htmlInput.value = paths.htmlFileName;
 
         function saveAllSettings() {
             settings.folderPath = folderInput.value;
@@ -231,21 +235,25 @@
         compressionSelect.value = settings.compressionTab || 'gzip';
 
         function showSettingsForType(type) {
-            document.getElementById('gzip-settings').style.display = (type === 'gzip') ? 'block' : 'none';
-            document.getElementById('brotli-settings').style.display = (type === 'brotli') ? 'block' : 'none';
+            const types = ['gzip', 'brotli', 'zstd'];
+            types.forEach((x) => {
+                const el = document.getElementById(x + '-settings');
+                if (el) el.style.display = (x === type) ? 'block' : 'none';
+            });
             settings.compressionTab = type;
             saveSettings(settings);
             loadSettingsForType(type);
         }
 
         function loadSettingsForType(type) {
-            const typeSettings = settings[type] || { createBackup: true, wasmLevel: 9, pckLevel: 9 };
+            const defaults = { gzip: { createBackup: true, wasmLevel: 9, pckLevel: 9 }, brotli: { createBackup: true, wasmLevel: 11, pckLevel: 11 }, zstd: { createBackup: true, wasmLevel: 19, pckLevel: 19 } };
+            const typeSettings = settings[type] || defaults[type] || { createBackup: true, wasmLevel: 9, pckLevel: 9 };
             const backup = document.getElementById(`${type}-createBackup`);
             const wasm = document.getElementById(`${type}-wasmLevel`);
             const pck = document.getElementById(`${type}-pckLevel`);
             if (backup) backup.checked = typeSettings.createBackup !== undefined ? typeSettings.createBackup : true;
-            if (wasm) wasm.value = typeSettings.wasmLevel || 9;
-            if (pck) pck.value = typeSettings.pckLevel || 9;
+            if (wasm) wasm.value = typeSettings.wasmLevel;
+            if (pck) pck.value = typeSettings.pckLevel;
         }
 
         function saveSettingsForType(type) {
@@ -436,6 +444,10 @@
             const platform = platformSelect.value;
             
             
+            // Сохраняем пути в persist.js
+            localStorage.setItem('app:folderPath', folder);
+            localStorage.setItem('app:htmlFileName', htmlName);
+
             const basePayload = {
                 folder,
                 filename: htmlName,

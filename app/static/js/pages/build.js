@@ -1,19 +1,25 @@
 // build.js — вкладка «Сборка движка»
 document.addEventListener('DOMContentLoaded', () => {
-    // Локализация
     const t = (key) => window.i18n?.t(key) || key;
 
-    // --- Переключение основных вкладок (Сборка / Генерация) ---
-    document.querySelectorAll('.build-tab').forEach((tab) => {
-        tab.addEventListener('click', function () {
-            document.querySelectorAll('.build-tab').forEach((tb) => tb.classList.remove('active'));
-            document.querySelectorAll('.build-tab-content').forEach((tc) => tc.classList.remove('active'));
-            this.classList.add('active');
-            document.getElementById('tab-' + this.dataset.tab).classList.add('active');
+    // --- Переключение табов (основных и подгрупп) ---
+    const switchTab = (tabSelector, contentSelector, dataAttr) => {
+        document.querySelectorAll(tabSelector).forEach((tab) => {
+            tab.addEventListener('click', function () {
+                const target = this.dataset[dataAttr];
+                document.querySelectorAll(tabSelector).forEach((tb) => tb.classList.remove('active'));
+                document.querySelectorAll(contentSelector).forEach((tc) => tc.classList.remove('active'));
+                this.classList.add('active');
+                const content = document.querySelector(`${contentSelector}[data-${dataAttr}="${target}"]`);
+                if (content) content.classList.add('active');
+            });
         });
-    });
+    };
 
-    // --- Переключение групп (основные разделы параметров) ---
+    // Основные табы (Сборка / Генерация)
+    switchTab('.build-tab', '.build-tab-content', 'tab');
+
+    // --- Группы параметров ---
     const groupTabs = document.querySelectorAll('.group-tab');
     const groupContents = document.querySelectorAll('.group-content');
 
@@ -22,7 +28,6 @@ document.addEventListener('DOMContentLoaded', () => {
         groupContents.forEach((gc) => {
             gc.classList.toggle('active', gc.dataset.group === group);
             if (gc.dataset.group === group) {
-                // Автоматически показать первую подгруппу (для модулей)
                 const subTabs = gc.querySelectorAll('.subgroup-tab');
                 if (subTabs.length) {
                     subTabs.forEach((st) => st.classList.remove('active'));
@@ -39,17 +44,8 @@ document.addEventListener('DOMContentLoaded', () => {
         gt.addEventListener('click', () => showGroup(gt.dataset.group));
     });
 
-    // --- Переключение подгрупп (внутри модулей) ---
-    document.querySelectorAll('.subgroup-tab').forEach((st) => {
-        st.addEventListener('click', function () {
-            const parent = this.closest('.group-content');
-            parent.querySelectorAll('.subgroup-tab').forEach((t) => t.classList.remove('active'));
-            this.classList.add('active');
-            parent.querySelectorAll('.subgroup-content').forEach((sc) => {
-                sc.classList.toggle('active', sc.dataset.subgroup === this.dataset.subgroup);
-            });
-        });
-    });
+    // Подгруппы внутри модулей
+    switchTab('.subgroup-tab', '.subgroup-content', 'subgroup');
 
     // По умолчанию показываем первую группу
     if (groupTabs.length) showGroup(groupTabs[0].dataset.group);

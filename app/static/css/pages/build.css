@@ -130,12 +130,22 @@
     max-height: none;
 }
 
+.build-params-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 10px 24px;
+}
+
 .build-param {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
     min-width: 0;
+    padding: 8px 12px;
+    background: var(--bg-app, #1e1e2e);
+    border: 1px solid var(--border, #444);
+    border-radius: 6px;
 }
 
 .build-param .param-info {

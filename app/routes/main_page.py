@@ -12,10 +12,6 @@ class MainPageRouter(BaseRouter):
     def register_routes(self):
         @self.get("/")
         async def index(request: Request):
-            # Диагностика: проверяем, что build_params не пустой
-            print(f"[DEBUG] build_params count: {len(self.build_params)}")
-            if self.build_params:
-                print(f"[DEBUG] first param: {self.build_params[0].name}")
             return self.templates.TemplateResponse(
                 request=request,
                 name="index.html",
