@@ -1,0 +1,27 @@
+<link rel="stylesheet" href="/static/css/pages/preview.css">
+<h1 data-i18n="preview_title">Превью билда</h1>
+<div class="compress-form">
+    <div class="form-group">
+        <label for="previewHtmlPath" data-i18n="preview_file">HTML-файл билда:</label>
+        <div class="folder-selector">
+            <input type="text" id="previewHtmlPath" data-persist placeholder="C:/path/to/build/index.html" class="text-input">
+            <button id="previewSelectFileBtn" class="button second-button"><i class="fas fa-file-code"></i> <span data-i18n="compress_select_html_short">Выбрать HTML</span></button>
+        </div>
+    </div>
+
+    <div class="form-group flex-row preview-controls">
+        <button id="previewStartBtn" class="button primary-button icon-btn" data-title-key="preview_start" title="Запустить превью"><i class="fas fa-play"></i></button>
+        <button id="previewRestartBtn" class="button second-button icon-btn" data-title-key="preview_restart" title="Перезапустить"><i class="fas fa-rotate-right"></i></button>
+        <button id="previewStopBtn" class="button second-button icon-btn" data-title-key="preview_stop" title="Остановить"><i class="fas fa-stop"></i></button>
+        <button id="previewMuteBtn" class="button second-button icon-btn" data-title-key="preview_mute" title="Выключить звук"><i id="previewMuteIcon" class="fas fa-volume-high"></i></button>
+        <div class="preview-timing" id="previewTiming" hidden>
+            <i class="fas fa-stopwatch"></i>
+            <span id="previewTimingText"></span>
+        </div>
+    </div>
+
+    <div class="preview-container" id="previewContainer">
+        <div class="preview-placeholder" data-i18n="preview_placeholder">Выберите HTML-файл и запустите превью</div>
+        <iframe id="previewFrame" class="preview-frame" title="preview"></iframe>
+    </div>
+</div>

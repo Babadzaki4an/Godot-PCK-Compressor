@@ -3,6 +3,7 @@ from .main_page import MainPageRouter
 from .partials import ParticalPageRouter
 from .compress import CompressRouter
 from .build import BuildRouter
+from .preview import PreviewRouter
 
 __all__ = [
     "ApiRouter",
@@ -10,4 +11,5 @@ __all__ = [
     "ParticalPageRouter",
     "CompressRouter",
     "BuildRouter",
+    "PreviewRouter",
 ]

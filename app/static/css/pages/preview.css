@@ -1,0 +1,77 @@
+/* preview.css – страница превью */
+#page-preview {
+    display: none;
+    flex-direction: column;
+    height: calc(100vh - 60px);
+}
+
+#page-preview.active {
+    display: flex;
+}
+
+#page-preview .compress-form {
+    max-width: none;
+    width: 100%;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.preview-container {
+    position: relative;
+    width: 100%;
+    flex: 1 1 auto;
+    min-height: 320px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-app);
+}
+
+.preview-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 14px;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+}
+
+.preview-container.running .preview-placeholder {
+    display: none;
+}
+
+.preview-frame {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+}
+
+.preview-controls .icon-btn {
+    padding: 10px 12px;
+}
+
+.preview-controls {
+    align-items: center;
+}
+
+.preview-timing {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--text-muted);
+    background: var(--bg-secondary, var(--bg-app));
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    white-space: nowrap;
+}

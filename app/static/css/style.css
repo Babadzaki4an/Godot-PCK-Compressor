@@ -603,22 +603,23 @@ input[type="checkbox"] {
 
     .menu {
         display: flex;
-        gap: 10px;
+        gap: 4px;
         flex-grow: 0;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
     }
     .menu-item {
-        padding: 8px 12px;
+        padding: 10px;
         border-left: none;
         border-bottom: 3px solid transparent;
-        gap: 8px;
+        justify-content: center;
+        gap: 0;
     }
+    /* На маленьких экранах — только иконки */
     .menu-item span {
-        display: inline !important;
-        opacity: 1 !important;
+        display: none !important;
     }
     .menu-item i {
-        font-size: 16px;
+        font-size: 18px;
         width: auto;
     }
     .menu-item.active {
@@ -633,12 +634,12 @@ input[type="checkbox"] {
         display: flex !important;
     }
     .sidebar.collapsed .menu-item span {
-        display: inline !important;
+        display: none !important;
     }
     .sidebar.collapsed .menu-item {
-        padding: 8px 12px;
-        justify-content: flex-start;
-        gap: 8px;
+        padding: 10px;
+        justify-content: center;
+        gap: 0;
     }
     .sidebar.collapsed .menu-item i {
         font-size: 16px;

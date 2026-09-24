@@ -1,27 +1,19 @@
 // persist.js – сохранение и восстановление полей
+// Все input с атрибутом data-persist сохраняются в localStorage
+// под ключом "app:<id>" и восстанавливаются при загрузке.
 (function() {
     'use strict';
 
-    // Список всех полей для сохранения: [id, key в localStorage]
-    const fields = [
-        ['folderPath', 'app:folderPath'],
-        ['htmlFileName', 'app:htmlFileName'],
-        ['engineSrcPath', 'app:engineSrcPath'],
-        ['emsdkPath', 'app:emsdkPath'],
-        ['wasmOptPath', 'app:wasmOptPath'],
-        ['customBuildScript', 'app:customBuildScript'],
-        ['gdbuildProfilesPath', 'app:gdbuildProfilesPath'],
-    ];
+    const inputs = document.querySelectorAll('input[data-persist]');
 
-    // --- Восстановление из localStorage ---
-    fields.forEach(function ([id, key]) {
-        const input = document.getElementById(id);
-        if (!input) return;
+    inputs.forEach(function (input) {
+        const key = 'app:' + input.id;
+
         const saved = localStorage.getItem(key);
         if (saved !== null) {
             input.value = saved;
         }
-        // --- Сохранение при изменении ---
+
         input.addEventListener('input', function () {
             localStorage.setItem(key, input.value);
         });

@@ -41,6 +41,10 @@ class App:
         async def no_cache_middleware(request: Request, call_next):
             response = await call_next(request)
             response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            
+            response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+            response.headers["Cross-Origin-Embedder-Policy"] = "credentialless"
+            response.headers["Cross-Origin-Resource-Policy"] = "cross-origin"
             return response
 
     def _setup_routes(self):
@@ -51,6 +55,7 @@ class App:
         self.fastapi.include_router(ParticalPageRouter(prefix="/partials", templates=self.templates))
         self.fastapi.include_router(CompressRouter(prefix="/compress"))
         self.fastapi.include_router(BuildRouter(prefix="/build"))
+        self.fastapi.include_router(PreviewRouter(prefix="/preview"))
 
     @property
     def app(self) -> FastAPI:

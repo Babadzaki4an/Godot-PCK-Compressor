@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const pages = {
         compress: document.getElementById('page-compress'),
         build: document.getElementById('page-build'),
+        preview: document.getElementById('page-preview'),
         settings: document.getElementById('page-settings'),
         about: document.getElementById('page-about')
     };

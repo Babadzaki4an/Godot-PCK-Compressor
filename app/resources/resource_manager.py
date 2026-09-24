@@ -98,6 +98,15 @@ class ResourceManager():
     @classmethod
     def get_platform_sdk_data(cls, platform_name: str) -> PlatformSDKData | None:        return cls._get_resource(f"{platform_name}.json", PlatformSDKData, cls.PLATFORM_DIR)
 
+    GAME_HOOK_NAME: str = "game_hook.js"
+
+    @classmethod
+    def get_game_hook_js(cls) -> str:
+        """JS-хук для превью (мут звука, перехват внешних ссылок)."""
+        path = cls.FILES_DIR / cls.GAME_HOOK_NAME
+        with open(path, 'r', encoding='utf-8') as f:
+            return f.read()
+
     @classmethod
     def get_build_params(cls) -> list[CustomPyComponent]:
         params = cls._get_resource(cls.BUILD_CUSTOM_PY_NAME, CustomPyComponent, cls.BUILD_DIR) or []

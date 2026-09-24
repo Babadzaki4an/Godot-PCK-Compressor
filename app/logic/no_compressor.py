@@ -17,7 +17,6 @@ class NoCompressor(Compressor):
 
     @classmethod
     def _change_js(cls, folder: str, filename: str) -> bool:
-        # Nothing to patch — the build stays untouched.
         return True
 
     @classmethod
@@ -31,5 +30,4 @@ class NoCompressor(Compressor):
 
     @classmethod
     def _additional(cls, folder: str, filename: str) -> bool:
-        # Nothing extra to add.
         return True
