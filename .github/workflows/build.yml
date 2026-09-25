@@ -1,0 +1,67 @@
+name: Build exe
+
+on:
+  workflow_dispatch:
+
+env:
+  APP_NAME: Godot-PCK-Compressor
+
+jobs:
+  build:
+    name: Windows build
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install "pyinstaller>=6.16,<7"
+
+      - name: Build executable
+        run: |
+          pyinstaller --noconfirm --clean --onefile --windowed `
+            --name "$env:APP_NAME" `
+            --icon app/static/icons/favicon.ico `
+            --distpath output `
+            --workpath build/pyinstaller `
+            --specpath build `
+            --hidden-import webview.platforms.winforms `
+            --hidden-import uvicorn.logging `
+            --hidden-import uvicorn.loops.auto `
+            --hidden-import uvicorn.protocols.http.auto `
+            --hidden-import uvicorn.protocols.websockets.auto `
+            --hidden-import uvicorn.lifespan.on `
+            --add-data "app/templates;app/templates" `
+            --add-data "app/static;app/static" `
+            --add-data "app/locales;app/locales" `
+            --add-data "app/resources/files;app/resources/files" `
+            run.py
+
+      - name: Package
+        run: |
+          $exe = Get-Item "output/$env:APP_NAME.exe"
+          if ($exe.Length -lt 1MB) {
+            throw "Build looks broken, exe size is $($exe.Length) bytes"
+          }
+          Compress-Archive -Path $exe.FullName, README.md, LICENSE `
+            -DestinationPath "output/$env:APP_NAME.zip" -Force
+          Get-ChildItem output | Select-Object Name, Length
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-windows
+          path: |
+            output/*.exe
+            output/*.zip
+          if-no-files-found: error
