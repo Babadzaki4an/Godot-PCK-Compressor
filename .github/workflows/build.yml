@@ -34,7 +34,6 @@ jobs:
             --icon app/static/icons/favicon.ico `
             --distpath output `
             --workpath build/pyinstaller `
-            --specpath build `
             --hidden-import webview.platforms.winforms `
             --hidden-import uvicorn.logging `
             --hidden-import uvicorn.loops.auto `
