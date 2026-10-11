@@ -184,12 +184,12 @@
         "subgroup": "images"
     },
     {
-        "name": "module_jolt_enabled",
+        "name": "module_jolt_physics_enabled",
         "values": [
             "no",
             "yes"
         ],
-        "description": "param_jolt",
+        "description": "param_jolt_physics",
         "group": "modules",
         "subgroup": "physics"
     },
@@ -364,32 +364,12 @@
         "subgroup": "images"
     },
     {
-        "name": "module_raycast_enabled",
-        "values": [
-            "no",
-            "yes"
-        ],
-        "description": "param_raycast",
-        "group": "modules",
-        "subgroup": "other"
-    },
-    {
         "name": "module_regex_enabled",
         "values": [
             "no",
             "yes"
         ],
         "description": "param_regex",
-        "group": "modules",
-        "subgroup": "other"
-    },
-    {
-        "name": "module_render_enabled",
-        "values": [
-            "no",
-            "yes"
-        ],
-        "description": "param_render",
         "group": "modules",
         "subgroup": "other"
     },
@@ -504,16 +484,6 @@
         "subgroup": "audio"
     },
     {
-        "name": "module_vulkan_enabled",
-        "values": [
-            "no",
-            "yes"
-        ],
-        "description": "param_vulkan",
-        "group": "modules",
-        "subgroup": "other"
-    },
-    {
         "name": "module_webrtc_enabled",
         "values": [
             "no",
@@ -564,15 +534,6 @@
         "subgroup": "other"
     },
     {
-        "name": "closure",
-        "values": [
-            "yes",
-            "no"
-        ],
-        "description": "param_closure",
-        "group": "optimization"
-    },
-    {
         "name": "debug_symbols",
         "values": [
             "yes",
@@ -582,19 +543,10 @@
         "group": "optimization"
     },
     {
-        "name": "include_debug_symbols",
-        "values": [
-            "yes",
-            "no"
-        ],
-        "description": "param_include_debug",
-        "group": "optimization"
-    },
-    {
         "name": "lto",
         "values": [
-            "none", 
-            "auto", 
+            "none",
+            "auto",
             "thin",
             "full"
         ],
@@ -606,9 +558,12 @@
         "values": [
             "auto",
             "none",
-            "size",
+            "custom",
+            "debug",
             "speed",
-            "debug"
+            "speed_trace",
+            "size",
+            "size_extra"
         ],
         "description": "param_optimize",
         "group": "optimization"
@@ -632,51 +587,6 @@
         "group": "optimization"
     },
     {
-        "name": "separate_asm",
-        "values": [
-            "yes",
-            "no"
-        ],
-        "description": "param_separate_asm",
-        "group": "optimization"
-    },
-    {
-        "name": "d3d12",
-        "values": [
-            "yes",
-            "no"
-        ],
-        "description": "param_d3d12",
-        "group": "render"
-    },
-    {
-        "name": "opengl3",
-        "values": [
-            "yes",
-            "no"
-        ],
-        "description": "param_opengl3",
-        "group": "render"
-    },
-    {
-        "name": "use_volk",
-        "values": [
-            "yes",
-            "no"
-        ],
-        "description": "param_use_volk",
-        "group": "render"
-    },
-    {
-        "name": "vulkan",
-        "values": [
-            "yes",
-            "no"
-        ],
-        "description": "param_vulkan_opt",
-        "group": "render"
-    },
-    {
         "name": "shell",
         "values": [
             "default",
@@ -695,13 +605,132 @@
         "group": "web"
     },
     {
-        "name": "use_wasm",
+        "name": "disable_2d",
         "values": [
             "yes",
             "no"
         ],
-        "description": "param_use_wasm",
+        "description": "param_disable_2d",
+        "group": "features"
+    },
+    {
+        "name": "disable_navigation_2d",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_disable_navigation_2d",
+        "group": "features"
+    },
+    {
+        "name": "disable_navigation_3d",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_disable_navigation_3d",
+        "group": "features"
+    },
+    {
+        "name": "disable_xr",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_disable_xr",
+        "group": "features"
+    },
+    {
+        "name": "module_godot_physics_2d_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_godot_physics_2d",
+        "group": "modules",
+        "subgroup": "physics"
+    },
+    {
+        "name": "dev_build",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_dev_build",
+        "group": "optimization"
+    },
+    {
+        "name": "separate_debug_symbols",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_separate_debug_symbols",
+        "group": "optimization"
+    },
+    {
+        "name": "debug_paths_relative",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_debug_paths_relative",
+        "group": "optimization"
+    },
+    {
+        "name": "rendering_device",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_rendering_device",
+        "group": "render"
+    },
+    {
+        "name": "forward_plus_renderer",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_forward_plus_renderer",
+        "group": "render"
+    },
+    {
+        "name": "javascript_eval",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_javascript_eval",
         "group": "web"
+    },
+    {
+        "name": "dlink_enabled",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_dlink_enabled",
+        "group": "web"
+    },
+    {
+        "name": "disable_physics_2d",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_disable_physics_2d",
+        "group": "features"
+    },
+    {
+        "name": "module_webp_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_webp",
+        "group": "modules",
+        "subgroup": "images"
     },
     {
         "name": "webgl2",
@@ -713,12 +742,129 @@
         "group": "web"
     },
     {
-        "name": "webgpu",
+        "name": "d3d12",
         "values": [
             "yes",
             "no"
         ],
-        "description": "param_webgpu",
-        "group": "web"
+        "description": "param_d3d12",
+        "group": "render"
+    },
+    {
+        "name": "use_volk",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_use_volk",
+        "group": "render"
+    },
+    {
+        "name": "opengl3",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_opengl3",
+        "group": "render"
+    },
+    {
+        "name": "vulkan",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_vulkan",
+        "group": "render"
+    },
+    {
+        "name": "metal",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_metal",
+        "group": "render"
+    },
+    {
+        "name": "angle",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_angle",
+        "group": "render"
+    },
+    {
+        "name": "forward_mobile_renderer",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_forward_mobile_renderer",
+        "group": "render"
+    },
+    {
+        "name": "separate_asm",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_separate_asm",
+        "group": "optimization"
+    },
+    {
+        "name": "include_debug_symbols",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_include_debug_symbols",
+        "group": "optimization"
+    },
+    {
+        "name": "closure",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_closure",
+        "group": "optimization"
+    },
+    {
+        "name": "modules_enabled_by_default",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_modules_enabled_by_default",
+        "group": "modules"
+    },
+    {
+        "name": "disable_exceptions",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_disable_exceptions",
+        "group": "features"
+    },
+    {
+        "name": "disable_overrides",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_disable_overrides",
+        "group": "features"
+    },
+    {
+        "name": "disable_path_overrides",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_disable_path_overrides",
+        "group": "features"
     }
 ]
