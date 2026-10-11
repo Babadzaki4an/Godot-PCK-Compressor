@@ -1,0 +1,724 @@
+[
+    {
+        "name": "brotli",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_brotli",
+        "group": "features"
+    },
+    {
+        "name": "deprecated",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_deprecated",
+        "group": "features"
+    },
+    {
+        "name": "disable_3d",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_disable_3d",
+        "group": "features"
+    },
+    {
+        "name": "disable_advanced_gui",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_disable_advanced_gui",
+        "group": "features"
+    },
+    {
+        "name": "disable_physics_3d",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_disable_physics_3d",
+        "group": "features"
+    },
+    {
+        "name": "minizip",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_minizip_opt",
+        "group": "features"
+    },
+    {
+        "name": "module_basis_universal_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_basis_universal",
+        "group": "modules",
+        "subgroup": "images"
+    },
+    {
+        "name": "module_bmp_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_bmp",
+        "group": "modules",
+        "subgroup": "images"
+    },
+    {
+        "name": "module_camera_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_camera",
+        "group": "modules",
+        "subgroup": "images"
+    },
+    {
+        "name": "module_csg_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_csg",
+        "group": "modules",
+        "subgroup": "3d"
+    },
+    {
+        "name": "module_dds_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_dds",
+        "group": "modules",
+        "subgroup": "images"
+    },
+    {
+        "name": "module_enet_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_enet",
+        "group": "modules",
+        "subgroup": "network"
+    },
+    {
+        "name": "module_etcpak_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_etcpak",
+        "group": "modules",
+        "subgroup": "images"
+    },
+    {
+        "name": "module_freetype_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_freetype",
+        "group": "modules",
+        "subgroup": "text"
+    },
+    {
+        "name": "module_gdscript_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_gdscript",
+        "group": "modules",
+        "subgroup": "other"
+    },
+    {
+        "name": "module_gltf_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_gltf",
+        "group": "modules",
+        "subgroup": "3d"
+    },
+    {
+        "name": "module_godot_physics_3d_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_godot_physics_3d",
+        "group": "modules",
+        "subgroup": "physics"
+    },
+    {
+        "name": "module_gridmap_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_gridmap",
+        "group": "modules",
+        "subgroup": "3d"
+    },
+    {
+        "name": "module_hdr_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_hdr",
+        "group": "modules",
+        "subgroup": "images"
+    },
+    {
+        "name": "module_jolt_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_jolt",
+        "group": "modules",
+        "subgroup": "physics"
+    },
+    {
+        "name": "module_jpg_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_jpg",
+        "group": "modules",
+        "subgroup": "images"
+    },
+    {
+        "name": "module_jsonrpc_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_jsonrpc",
+        "group": "modules",
+        "subgroup": "other"
+    },
+    {
+        "name": "module_ktx_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_ktx",
+        "group": "modules",
+        "subgroup": "images"
+    },
+    {
+        "name": "module_lightmapper_rd_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_lightmapper_rd",
+        "group": "modules",
+        "subgroup": "other"
+    },
+    {
+        "name": "module_mbedtls_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_mbedtls",
+        "group": "modules",
+        "subgroup": "other"
+    },
+    {
+        "name": "module_meshoptimizer_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_meshoptimizer",
+        "group": "modules",
+        "subgroup": "3d"
+    },
+    {
+        "name": "module_minimp3_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_minimp3",
+        "group": "modules",
+        "subgroup": "audio"
+    },
+    {
+        "name": "module_minizip_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_minizip",
+        "group": "modules",
+        "subgroup": "other"
+    },
+    {
+        "name": "module_mobile_vr_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_mobile_vr",
+        "group": "modules",
+        "subgroup": "other"
+    },
+    {
+        "name": "module_msdfgen_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_msdf",
+        "group": "modules",
+        "subgroup": "text"
+    },
+    {
+        "name": "module_multiplayer_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_multiplayer",
+        "group": "modules",
+        "subgroup": "network"
+    },
+    {
+        "name": "module_navigation_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_navigation",
+        "group": "modules",
+        "subgroup": "other"
+    },
+    {
+        "name": "module_noise_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_noise",
+        "group": "modules",
+        "subgroup": "3d"
+    },
+    {
+        "name": "module_ogg_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_ogg",
+        "group": "modules",
+        "subgroup": "audio"
+    },
+    {
+        "name": "module_openxr_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_openxr",
+        "group": "modules",
+        "subgroup": "other"
+    },
+    {
+        "name": "module_opus_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_opus",
+        "group": "modules",
+        "subgroup": "audio"
+    },
+    {
+        "name": "module_pvr_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_pvr",
+        "group": "modules",
+        "subgroup": "images"
+    },
+    {
+        "name": "module_raycast_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_raycast",
+        "group": "modules",
+        "subgroup": "other"
+    },
+    {
+        "name": "module_regex_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_regex",
+        "group": "modules",
+        "subgroup": "other"
+    },
+    {
+        "name": "module_render_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_render",
+        "group": "modules",
+        "subgroup": "other"
+    },
+    {
+        "name": "module_squish_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_squish",
+        "group": "modules",
+        "subgroup": "images"
+    },
+    {
+        "name": "module_svg_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_svg",
+        "group": "modules",
+        "subgroup": "images"
+    },
+    {
+        "name": "module_text_server_adv_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_text_adv",
+        "group": "modules",
+        "subgroup": "text"
+    },
+    {
+        "name": "module_text_server_fb_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_text_fb",
+        "group": "modules",
+        "subgroup": "text"
+    },
+    {
+        "name": "module_tga_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_tga",
+        "group": "modules",
+        "subgroup": "images"
+    },
+    {
+        "name": "module_theora_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_theora",
+        "group": "modules",
+        "subgroup": "audio"
+    },
+    {
+        "name": "module_tinyexr_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_tinyexr",
+        "group": "modules",
+        "subgroup": "images"
+    },
+    {
+        "name": "module_translate_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_translate",
+        "group": "modules",
+        "subgroup": "other"
+    },
+    {
+        "name": "module_upnp_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_upnp",
+        "group": "modules",
+        "subgroup": "network"
+    },
+    {
+        "name": "module_vhacd_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_vhacd",
+        "group": "modules",
+        "subgroup": "3d"
+    },
+    {
+        "name": "module_vorbis_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_vorbis",
+        "group": "modules",
+        "subgroup": "audio"
+    },
+    {
+        "name": "module_vulkan_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_vulkan",
+        "group": "modules",
+        "subgroup": "other"
+    },
+    {
+        "name": "module_webrtc_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_webrtc",
+        "group": "modules",
+        "subgroup": "network"
+    },
+    {
+        "name": "module_websocket_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_websocket",
+        "group": "modules",
+        "subgroup": "network"
+    },
+    {
+        "name": "module_webxr_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_webxr",
+        "group": "modules",
+        "subgroup": "other"
+    },
+    {
+        "name": "module_xatlas_unwrap_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_xatlas",
+        "group": "modules",
+        "subgroup": "3d"
+    },
+    {
+        "name": "module_zip_enabled",
+        "values": [
+            "no",
+            "yes"
+        ],
+        "description": "param_zip",
+        "group": "modules",
+        "subgroup": "other"
+    },
+    {
+        "name": "closure",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_closure",
+        "group": "optimization"
+    },
+    {
+        "name": "debug_symbols",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_debug_symbols",
+        "group": "optimization"
+    },
+    {
+        "name": "include_debug_symbols",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_include_debug",
+        "group": "optimization"
+    },
+    {
+        "name": "lto",
+        "values": [
+            "none", 
+            "auto", 
+            "thin",
+            "full"
+        ],
+        "description": "param_lto",
+        "group": "optimization"
+    },
+    {
+        "name": "optimize",
+        "values": [
+            "auto",
+            "none",
+            "size",
+            "speed",
+            "debug"
+        ],
+        "description": "param_optimize",
+        "group": "optimization"
+    },
+    {
+        "name": "precision",
+        "values": [
+            "double",
+            "single"
+        ],
+        "description": "param_precision",
+        "group": "optimization"
+    },
+    {
+        "name": "production",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_production",
+        "group": "optimization"
+    },
+    {
+        "name": "separate_asm",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_separate_asm",
+        "group": "optimization"
+    },
+    {
+        "name": "d3d12",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_d3d12",
+        "group": "render"
+    },
+    {
+        "name": "opengl3",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_opengl3",
+        "group": "render"
+    },
+    {
+        "name": "use_volk",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_use_volk",
+        "group": "render"
+    },
+    {
+        "name": "vulkan",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_vulkan_opt",
+        "group": "render"
+    },
+    {
+        "name": "shell",
+        "values": [
+            "default",
+            "custom"
+        ],
+        "description": "param_shell",
+        "group": "web"
+    },
+    {
+        "name": "threads",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_threads",
+        "group": "web"
+    },
+    {
+        "name": "use_wasm",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_use_wasm",
+        "group": "web"
+    },
+    {
+        "name": "webgl2",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_webgl2",
+        "group": "web"
+    },
+    {
+        "name": "webgpu",
+        "values": [
+            "yes",
+            "no"
+        ],
+        "description": "param_webgpu",
+        "group": "web"
+    }
+]

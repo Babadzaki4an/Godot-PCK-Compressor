@@ -10,6 +10,8 @@ temp/
 # Distribution / packaging
 .Python
 build/
+# Рабочая папка с конфигурацией генератора custom.py (не артефакты сборки)
+!app/resources/files/build/
 output/
 develop-eggs/
 dist/
